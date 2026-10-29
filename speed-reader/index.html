@@ -6,9 +6,9 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="epub.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=5" />
+  <script src="epub.js?v=5" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -30,24 +30,24 @@
   </svg>
 
   <header class="topbar">
-    <div class="brand"><span class="logo"><svg><use href="#i-bolt"/></svg></span><span class="brand-name">Speed Reader</span></div>
+    <div class="brand"><span class="logo"><svg width="18" height="18"><use href="#i-bolt"/></svg></span><span class="brand-name">Speed Reader</span></div>
     <div class="book-info" id="bookInfo">
       <div class="book-title" id="bookTitle"></div>
       <div class="book-sub" id="bookSub"></div>
     </div>
-    <span class="awake" id="awakeBadge" hidden title="The screen won't dim or lock while you read"><svg class="ic"><use href="#i-sun"/></svg><span class="lbl">Screen on</span></span>
-    <label class="btn ghost" for="fileInput" title="Open another EPUB"><svg class="ic"><use href="#i-book"/></svg><span class="lbl">Open</span></label>
-    <button class="btn ghost icon-only" id="openSettings" title="Settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
+    <span class="awake" id="awakeBadge" hidden title="The screen won't dim or lock while you read"><svg class="ic" width="20" height="20"><use href="#i-sun"/></svg><span class="lbl">Screen on</span></span>
+    <label class="btn ghost" for="fileInput" title="Open another EPUB"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg><span class="lbl">Open</span></label>
+    <button class="btn ghost icon-only" id="openSettings" title="Settings" aria-label="Settings"><svg class="ic" width="20" height="20"><use href="#i-gear"/></svg></button>
     <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden />
   </header>
 
   <main id="welcome" class="welcome">
     <section class="hero">
       <div class="dropzone" id="dropzone">
-        <div class="hero-icon"><svg><use href="#i-bolt"/></svg></div>
+        <div class="hero-icon"><svg width="34" height="34"><use href="#i-bolt"/></svg></div>
         <h1>Read your books faster</h1>
         <p>Open an <strong>.epub</strong> file to start. It stays on your device and is never uploaded.</p>
-        <label class="btn primary big" for="fileInput"><svg class="ic"><use href="#i-book"/></svg>Choose an EPUB</label>
+        <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg>Choose an EPUB</label>
         <p class="hint">or drag and drop it here</p>
         <p class="status" id="loadStatus" role="status"></p>
       </div>
@@ -109,17 +109,17 @@
       </div>
       <div class="control-row">
         <div class="speed fade-when-playing">
-          <button class="btn round sm" id="slower" title="Slower (↓)" aria-label="Slower"><svg class="ic"><use href="#i-minus"/></svg></button>
+          <button class="btn round sm" id="slower" title="Slower (↓)" aria-label="Slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
           <div class="speed-value"><output id="wpmOut">300</output><span>wpm</span></div>
-          <button class="btn round sm" id="faster" title="Faster (↑)" aria-label="Faster"><svg class="ic"><use href="#i-plus"/></svg></button>
+          <button class="btn round sm" id="faster" title="Faster (↑)" aria-label="Faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>
           <input type="range" class="range" id="wpm" min="100" max="1200" step="25" value="300" aria-label="Words per minute" />
         </div>
         <div class="transport">
-          <button class="btn round fade-when-playing" id="prevChapter" title="Previous chapter ([)" aria-label="Previous chapter"><svg class="ic"><use href="#i-prev"/></svg></button>
-          <button class="btn round" id="back" title="Previous sentence (←)" aria-label="Previous sentence"><svg class="ic"><use href="#i-back"/></svg></button>
-          <button class="btn round play" id="play" title="Play / pause (Space)" aria-label="Play"><svg class="ic"><use href="#i-play"/></svg></button>
-          <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic"><use href="#i-fwd"/></svg></button>
-          <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic"><use href="#i-next"/></svg></button>
+          <button class="btn round fade-when-playing" id="prevChapter" title="Previous chapter ([)" aria-label="Previous chapter"><svg class="ic" width="20" height="20"><use href="#i-prev"/></svg></button>
+          <button class="btn round" id="back" title="Previous sentence (←)" aria-label="Previous sentence"><svg class="ic" width="20" height="20"><use href="#i-back"/></svg></button>
+          <button class="btn round play" id="play" title="Play / pause (Space)" aria-label="Play"><svg class="ic" width="20" height="20"><use href="#i-play"/></svg></button>
+          <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic" width="20" height="20"><use href="#i-fwd"/></svg></button>
+          <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic" width="20" height="20"><use href="#i-next"/></svg></button>
         </div>
         <div class="dock-end"></div>
       </div>
@@ -130,7 +130,7 @@
     <form method="dialog">
       <div class="sheet-head">
         <h2 id="settingsTitle">Settings</h2>
-        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
       </div>
 
       <section>
@@ -140,8 +140,10 @@
           <div class="swatches" role="radiogroup" aria-label="Theme">
             <label class="swatch sw-auto"><input type="radio" name="theme" value="auto" /><span class="chip"><i></i></span>Auto</label>
             <label class="swatch sw-light"><input type="radio" name="theme" value="light" /><span class="chip"><i></i></span>Light</label>
-            <label class="swatch sw-sepia"><input type="radio" name="theme" value="sepia" /><span class="chip"><i></i></span>Sepia</label>
             <label class="swatch sw-dark"><input type="radio" name="theme" value="dark" /><span class="chip"><i></i></span>Dark</label>
+            <label class="swatch sw-sepia"><input type="radio" name="theme" value="sepia" /><span class="chip"><i></i></span>Sepia</label>
+            <label class="swatch sw-ocean"><input type="radio" name="theme" value="ocean" /><span class="chip"><i></i></span>Ocean</label>
+            <label class="swatch sw-blossom"><input type="radio" name="theme" value="blossom" /><span class="chip"><i></i></span>Blossom</label>
           </div>
         </div>
         <div class="field">
