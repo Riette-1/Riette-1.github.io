@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EPUB Speed Reader</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="epub.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">⚡ Speed Reader</div>
+    <div class="book-info" id="bookInfo"></div>
+    <label class="btn primary" for="fileInput">Open EPUB</label>
+    <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden />
+  </header>
+
+  <main>
+    <section id="welcome" class="welcome">
+      <div class="dropzone" id="dropzone">
+        <h1>Read your EPUBs faster</h1>
+        <p>Drop an <strong>.epub</strong> file here, or <label for="fileInput" class="link">choose one</label>.
+          Everything happens in your browser; the book is never uploaded.</p>
+        <p class="status" id="loadStatus" role="status"></p>
+      </div>
+      <div class="techniques">
+        <article>
+          <h2>Flash (RSVP)</h2>
+          <p>Rapid Serial Visual Presentation shows one word (or a small chunk) at a time in a fixed spot,
+            so your eyes stop jumping across the line. The red letter is the <em>optimal recognition point</em>,
+            where your eye naturally locks on.</p>
+        </article>
+        <article>
+          <h2>Pacer</h2>
+          <p>A highlight sweeps through the page at your target speed, like running a finger under the text.
+            It keeps you moving forward and discourages re-reading (regression).</p>
+        </article>
+        <article>
+          <h2>Smart timing &amp; Bionic</h2>
+          <p>Pauses lengthen at commas, sentence ends, paragraphs and long words so comprehension holds up.
+            Bionic mode bolds the start of each word to guide fixation in Pacer view.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="reader" class="reader" hidden>
+      <div class="toolbar">
+        <div class="tabs" role="tablist">
+          <button role="tab" class="tab" data-mode="rsvp" aria-selected="true">Flash</button>
+          <button role="tab" class="tab" data-mode="pacer" aria-selected="false">Pacer</button>
+        </div>
+        <select id="chapterSelect" aria-label="Chapter"></select>
+      </div>
+
+      <div id="rsvpStage" class="stage rsvp">
+        <div class="rsvp-frame">
+          <div class="guide top"></div>
+          <div class="word" id="rsvpWord" aria-live="off">
+            <span class="l"></span><span class="pivot"></span><span class="r"></span>
+          </div>
+          <div class="guide bottom"></div>
+        </div>
+        <p class="context" id="rsvpContext"></p>
+      </div>
+
+      <div id="pacerStage" class="stage pacer" hidden>
+        <h2 class="chapter-title" id="pacerTitle"></h2>
+        <div class="pacer-text" id="pacerText"></div>
+      </div>
+
+      <div class="controls">
+        <input type="range" id="progress" min="0" max="0" value="0" aria-label="Position in book" />
+        <div class="control-row">
+          <div class="transport">
+            <button class="btn icon" id="prevChapter" title="Previous chapter ([)">⏮</button>
+            <button class="btn icon" id="back" title="Previous sentence (←)">⏪</button>
+            <button class="btn icon play" id="play" title="Play / pause (Space)">▶</button>
+            <button class="btn icon" id="fwd" title="Next sentence (→)">⏩</button>
+            <button class="btn icon" id="nextChapter" title="Next chapter (])">⏭</button>
+          </div>
+          <div class="wpm">
+            <button class="btn icon small" id="slower" title="Slower (↓)">−</button>
+            <label><input type="range" id="wpm" min="100" max="1200" step="25" value="300" aria-label="Words per minute" />
+              <output id="wpmOut">300</output> wpm</label>
+            <button class="btn icon small" id="faster" title="Faster (↑)">+</button>
+          </div>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <details class="settings">
+        <summary>Settings &amp; shortcuts</summary>
+        <div class="settings-grid">
+          <label>Words per flash
+            <select id="chunk">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            </select>
+          </label>
+          <label>Text size
+            <input type="range" id="fontSize" min="70" max="160" step="10" value="100" />
+          </label>
+          <label>Theme
+            <select id="theme">
+              <option value="auto">Auto</option><option value="light">Light</option>
+              <option value="sepia">Sepia</option><option value="dark">Dark</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="pauses" checked /> Smart punctuation pauses</label>
+          <label class="check"><input type="checkbox" id="ramp" checked /> Ease in after pressing play</label>
+          <label class="check"><input type="checkbox" id="bionic" /> Bionic bolding (Pacer)</label>
+        </div>
+        <p class="shortcuts"><kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> sentence ·
+          <kbd>↑</kbd>/<kbd>↓</kbd> speed · <kbd>[</kbd>/<kbd>]</kbd> chapter · <kbd>M</kbd> switch mode ·
+          click any word to jump to it</p>
+      </details>
+    </section>
+  </main>
+</body>
+</html>
