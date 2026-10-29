@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
@@ -11,112 +11,178 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="currentColor" x="6" y="5" width="4" height="14" rx="1.2"/><rect fill="currentColor" x="14" y="5" width="4" height="14" rx="1.2"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.34-5.66M4 4v4h4"/></symbol>
+      <symbol id="i-fwd" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></symbol>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" d="M17 6.2v11.6a.8.8 0 0 1-1.25.66L8 13v4.5a1 1 0 0 1-2 0v-11a1 1 0 0 1 2 0V11l7.75-5.46A.8.8 0 0 1 17 6.2z"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" d="M7 6.2v11.6a.8.8 0 0 0 1.25.66L16 13v4.5a1 1 0 0 0 2 0v-11a1 1 0 0 0-2 0V11L8.25 5.54A.8.8 0 0 0 7 6.2z"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 12h12"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 12h12M12 6v12"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/></g></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H19v-5"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2 4 13.5h6.5L9.5 22 20 9.5h-6.6z"/></symbol>
+    </defs>
+  </svg>
+
   <header class="topbar">
-    <div class="brand">⚡ Speed Reader</div>
-    <div class="book-info" id="bookInfo"></div>
-    <label class="btn primary" for="fileInput">Open EPUB</label>
+    <div class="brand"><span class="logo"><svg><use href="#i-bolt"/></svg></span><span class="brand-name">Speed Reader</span></div>
+    <div class="book-info" id="bookInfo">
+      <div class="book-title" id="bookTitle"></div>
+      <div class="book-sub" id="bookSub"></div>
+    </div>
+    <span class="awake" id="awakeBadge" hidden title="The screen won't dim or lock while you read"><svg class="ic"><use href="#i-sun"/></svg><span class="lbl">Screen on</span></span>
+    <label class="btn ghost" for="fileInput" title="Open another EPUB"><svg class="ic"><use href="#i-book"/></svg><span class="lbl">Open</span></label>
+    <button class="btn ghost icon-only" id="openSettings" title="Settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
     <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden />
   </header>
 
-  <main>
-    <section id="welcome" class="welcome">
+  <main id="welcome" class="welcome">
+    <section class="hero">
       <div class="dropzone" id="dropzone">
-        <h1>Read your EPUBs faster</h1>
-        <p>Drop an <strong>.epub</strong> file here, or <label for="fileInput" class="link">choose one</label>.
-          Everything happens in your browser; the book is never uploaded.</p>
+        <div class="hero-icon"><svg><use href="#i-bolt"/></svg></div>
+        <h1>Read your books faster</h1>
+        <p>Open an <strong>.epub</strong> file to start. It stays on your device and is never uploaded.</p>
+        <label class="btn primary big" for="fileInput"><svg class="ic"><use href="#i-book"/></svg>Choose an EPUB</label>
+        <p class="hint">or drag and drop it here</p>
         <p class="status" id="loadStatus" role="status"></p>
       </div>
-      <div class="techniques">
-        <article>
-          <h2>Flash (RSVP)</h2>
-          <p>Rapid Serial Visual Presentation shows one word (or a small chunk) at a time in a fixed spot,
-            so your eyes stop jumping across the line. The red letter is the <em>optimal recognition point</em>,
-            where your eye naturally locks on.</p>
-        </article>
-        <article>
-          <h2>Pacer</h2>
-          <p>A highlight sweeps through the page at your target speed, like running a finger under the text.
-            It keeps you moving forward and discourages re-reading (regression).</p>
-        </article>
-        <article>
-          <h2>Smart timing &amp; Bionic</h2>
-          <p>Pauses lengthen at commas, sentence ends, paragraphs and long words so comprehension holds up.
-            Bionic mode bolds the start of each word to guide fixation in Pacer view.</p>
-        </article>
-      </div>
     </section>
+    <section class="techniques">
+      <article>
+        <div class="demo flash-demo">re<span>a</span>ding</div>
+        <h2>Flash</h2>
+        <p>One word at a time in a fixed spot, so your eyes never have to travel. The red letter marks where your eye naturally locks on.</p>
+      </article>
+      <article>
+        <div class="demo pacer-demo">read <span>along</span> with it</div>
+        <h2>Pacer</h2>
+        <p>A highlight sweeps through the page at your speed, like running a finger under the line, so you don't drift back.</p>
+      </article>
+      <article>
+        <div class="demo timing-demo">pause<span>,</span> breathe<span>.</span></div>
+        <h2>Smart timing</h2>
+        <p>Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.</p>
+      </article>
+    </section>
+  </main>
 
-    <section id="reader" class="reader" hidden>
-      <div class="toolbar">
-        <div class="tabs" role="tablist">
-          <button role="tab" class="tab" data-mode="rsvp" aria-selected="true">Flash</button>
-          <button role="tab" class="tab" data-mode="pacer" aria-selected="false">Pacer</button>
-        </div>
-        <select id="chapterSelect" aria-label="Chapter"></select>
+  <main id="reader" class="reader" hidden>
+    <div class="mode-bar fade-when-playing">
+      <div class="segmented" role="tablist" aria-label="Reading mode">
+        <button role="tab" class="tab" data-mode="rsvp" aria-selected="true">Flash</button>
+        <button role="tab" class="tab" data-mode="pacer" aria-selected="false">Pacer</button>
       </div>
+      <select id="chapterSelect" aria-label="Chapter"></select>
+    </div>
 
-      <div id="rsvpStage" class="stage rsvp">
-        <div class="rsvp-frame">
-          <div class="guide top"></div>
-          <div class="word" id="rsvpWord" aria-live="off">
-            <span class="l"></span><span class="pivot"></span><span class="r"></span>
-          </div>
-          <div class="guide bottom"></div>
+    <div id="rsvpStage" class="stage rsvp">
+      <div class="rsvp-frame">
+        <div class="guide top"></div>
+        <div class="word" id="rsvpWord" aria-live="off">
+          <span class="l"></span><span class="pivot"></span><span class="r"></span>
         </div>
-        <p class="context" id="rsvpContext"></p>
+        <div class="guide bottom"></div>
       </div>
+      <p class="context" id="rsvpContext"></p>
+      <p class="tap-hint" id="tapHint">Tap to play</p>
+    </div>
 
-      <div id="pacerStage" class="stage pacer" hidden>
+    <div id="pacerStage" class="stage pacer" hidden>
+      <div class="pacer-inner">
         <h2 class="chapter-title" id="pacerTitle"></h2>
         <div class="pacer-text" id="pacerText"></div>
       </div>
+    </div>
 
-      <div class="controls">
-        <input type="range" id="progress" min="0" max="0" value="0" aria-label="Position in book" />
-        <div class="control-row">
-          <div class="transport">
-            <button class="btn icon" id="prevChapter" title="Previous chapter ([)">⏮</button>
-            <button class="btn icon" id="back" title="Previous sentence (←)">⏪</button>
-            <button class="btn icon play" id="play" title="Play / pause (Space)">▶</button>
-            <button class="btn icon" id="fwd" title="Next sentence (→)">⏩</button>
-            <button class="btn icon" id="nextChapter" title="Next chapter (])">⏭</button>
-          </div>
-          <div class="wpm">
-            <button class="btn icon small" id="slower" title="Slower (↓)">−</button>
-            <label><input type="range" id="wpm" min="100" max="1200" step="25" value="300" aria-label="Words per minute" />
-              <output id="wpmOut">300</output> wpm</label>
-            <button class="btn icon small" id="faster" title="Faster (↑)">+</button>
-          </div>
+    <footer class="dock">
+      <div class="progress-wrap fade-when-playing">
+        <div class="progress-labels">
+          <span id="posLabel"></span>
+          <span id="timeLabel"></span>
         </div>
-        <div class="stats" id="stats"></div>
+        <input type="range" class="range" id="progress" min="0" max="0" value="0" aria-label="Position in book" />
+      </div>
+      <div class="control-row">
+        <div class="speed fade-when-playing">
+          <button class="btn round sm" id="slower" title="Slower (↓)" aria-label="Slower"><svg class="ic"><use href="#i-minus"/></svg></button>
+          <div class="speed-value"><output id="wpmOut">300</output><span>wpm</span></div>
+          <button class="btn round sm" id="faster" title="Faster (↑)" aria-label="Faster"><svg class="ic"><use href="#i-plus"/></svg></button>
+          <input type="range" class="range" id="wpm" min="100" max="1200" step="25" value="300" aria-label="Words per minute" />
+        </div>
+        <div class="transport">
+          <button class="btn round fade-when-playing" id="prevChapter" title="Previous chapter ([)" aria-label="Previous chapter"><svg class="ic"><use href="#i-prev"/></svg></button>
+          <button class="btn round" id="back" title="Previous sentence (←)" aria-label="Previous sentence"><svg class="ic"><use href="#i-back"/></svg></button>
+          <button class="btn round play" id="play" title="Play / pause (Space)" aria-label="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+          <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic"><use href="#i-fwd"/></svg></button>
+          <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="dock-end"></div>
+      </div>
+    </footer>
+  </main>
+
+  <dialog id="settings" class="sheet" aria-labelledby="settingsTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="settingsTitle">Settings</h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
       </div>
 
-      <details class="settings">
-        <summary>Settings &amp; shortcuts</summary>
-        <div class="settings-grid">
-          <label>Words per flash
-            <select id="chunk">
-              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-            </select>
-          </label>
-          <label>Text size
-            <input type="range" id="fontSize" min="70" max="160" step="10" value="100" />
-          </label>
-          <label>Theme
-            <select id="theme">
-              <option value="auto">Auto</option><option value="light">Light</option>
-              <option value="sepia">Sepia</option><option value="dark">Dark</option>
-            </select>
-          </label>
-          <label class="check"><input type="checkbox" id="pauses" checked /> Smart punctuation pauses</label>
-          <label class="check"><input type="checkbox" id="ramp" checked /> Ease in after pressing play</label>
-          <label class="check"><input type="checkbox" id="bionic" /> Bionic bolding (Pacer)</label>
+      <section>
+        <h3>Display</h3>
+        <div class="field">
+          <span class="field-label">Theme</span>
+          <div class="swatches" role="radiogroup" aria-label="Theme">
+            <label class="swatch sw-auto"><input type="radio" name="theme" value="auto" /><span class="chip"><i></i></span>Auto</label>
+            <label class="swatch sw-light"><input type="radio" name="theme" value="light" /><span class="chip"><i></i></span>Light</label>
+            <label class="swatch sw-sepia"><input type="radio" name="theme" value="sepia" /><span class="chip"><i></i></span>Sepia</label>
+            <label class="swatch sw-dark"><input type="radio" name="theme" value="dark" /><span class="chip"><i></i></span>Dark</label>
+          </div>
         </div>
-        <p class="shortcuts"><kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> sentence ·
-          <kbd>↑</kbd>/<kbd>↓</kbd> speed · <kbd>[</kbd>/<kbd>]</kbd> chapter · <kbd>M</kbd> switch mode ·
-          click any word to jump to it</p>
-      </details>
-    </section>
-  </main>
+        <div class="field">
+          <label class="field-label" for="fontSize">Text size <output id="fontSizeOut"></output></label>
+          <div class="size-row"><span class="aa sm">A</span><input type="range" class="range" id="fontSize" min="70" max="160" step="10" value="100" /><span class="aa lg">A</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h3>Reading</h3>
+        <div class="field">
+          <span class="field-label">Words per flash</span>
+          <div class="segmented small" role="radiogroup" aria-label="Words per flash">
+            <label><input type="radio" name="chunk" value="1" /><span>1</span></label>
+            <label><input type="radio" name="chunk" value="2" /><span>2</span></label>
+            <label><input type="radio" name="chunk" value="3" /><span>3</span></label>
+            <label><input type="radio" name="chunk" value="4" /><span>4</span></label>
+          </div>
+        </div>
+        <label class="toggle"><span><strong>Smart pauses</strong><small>Linger at punctuation, paragraphs and long words</small></span><input type="checkbox" id="pauses" /></label>
+        <label class="toggle"><span><strong>Ease in</strong><small>Start a little slower each time you press play</small></span><input type="checkbox" id="ramp" /></label>
+        <label class="toggle"><span><strong>Bionic bolding</strong><small>Bold the start of each word in Pacer</small></span><input type="checkbox" id="bionic" /></label>
+      </section>
+
+      <section>
+        <h3>Screen</h3>
+        <label class="toggle"><span><strong>Keep screen on</strong><small id="awakeNote">Stops the screen dimming while you read. Turns off after 5 minutes paused.</small></span><input type="checkbox" id="keepAwake" /></label>
+      </section>
+
+      <section class="shortcuts">
+        <h3>Keyboard</h3>
+        <dl>
+          <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous / next sentence</dd>
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower</dd>
+          <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next chapter</dd>
+          <dt><kbd>M</kbd></dt><dd>Switch Flash / Pacer</dd>
+        </dl>
+        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it.</p>
+      </section>
+    </form>
+  </dialog>
 </body>
 </html>

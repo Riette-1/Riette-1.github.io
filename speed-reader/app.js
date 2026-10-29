@@ -11,7 +11,7 @@
   };
 
   const settings = Object.assign(
-    { wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'rsvp' },
+    { wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'rsvp', keepAwake: true },
     store.get('sr:settings', {}),
   );
   const saveSettings = () => store.set('sr:settings', settings);
@@ -26,6 +26,12 @@
   let pacerSpans = [];
   let pacerCur = null;
   let lastSaved = 0;
+  let lastChapter = -1;
+
+  const fill = (input) => {
+    const span = input.max - input.min || 1;
+    input.style.setProperty('--fill', `${((input.value - input.min) / span) * 100}%`);
+  };
 
   // ---------- Loading ----------
 
@@ -50,10 +56,8 @@
     pos = Math.min(store.get(bookKey, 0), book.words.length - 1);
     pacerChapter = -1;
 
-    $('bookInfo').innerHTML = '';
-    const t = document.createElement('strong');
-    t.textContent = book.title;
-    $('bookInfo').append(t, book.author ? ` · ${book.author}` : '');
+    $('bookTitle').textContent = book.title;
+    lastChapter = -1;
 
     const sel = $('chapterSelect');
     sel.innerHTML = '';
@@ -62,7 +66,9 @@
 
     $('welcome').hidden = true;
     $('reader').hidden = false;
+    document.body.classList.add('reading');
     setMode(settings.mode);
+    keepAwake();
   }
 
   function showWelcome() {
@@ -160,8 +166,9 @@
     if (!book || playing) return;
     playing = true;
     rampStep = 0;
-    $('play').textContent = '⏸';
+    setPlayIcon();
     $('rsvpContext').classList.remove('show');
+    keepAwake();
     step();
   }
 
@@ -169,9 +176,17 @@
     clearTimeout(timer);
     if (!playing) return;
     playing = false;
-    $('play').textContent = '▶';
+    setPlayIcon();
     savePos(true);
     render();
+    keepAwake();
+  }
+
+  function setPlayIcon() {
+    const btn = $('play');
+    btn.querySelector('use').setAttribute('href', playing ? '#i-pause' : '#i-play');
+    btn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    document.body.classList.toggle('playing', playing);
   }
 
   const toggle = () => (playing ? pause() : play());
@@ -197,8 +212,13 @@
     const ci = chapterAt(pos);
     if (settings.mode === 'rsvp') renderRsvp(); else renderPacer(ci);
 
-    $('chapterSelect').value = ci;
+    if (ci !== lastChapter) {
+      lastChapter = ci;
+      $('chapterSelect').value = ci;
+      $('bookSub').textContent = [book.author, book.chapters[ci].title].filter(Boolean).join(' · ');
+    }
     $('progress').value = pos;
+    fill($('progress'));
     renderStats(ci);
     savePos(false);
   }
@@ -263,7 +283,7 @@
     host.replaceChildren(frag);
     pacerChapter = ci;
     pacerCur = null;
-    $('pacerStage').scrollTop = 0;
+    $('pacerStage').scrollTo({ top: 0, behavior: 'instant' });
   }
 
   function renderPacer(ci) {
@@ -295,9 +315,9 @@
     const factor = settings.pauses ? 1.2 : 1;
     const chLeft = ((ch.end - pos) / settings.wpm) * factor;
     const bookLeft = ((total - pos) / settings.wpm) * factor;
-    const pct = ((pos / Math.max(1, total - 1)) * 100).toFixed(1);
-    $('stats').textContent =
-      `Chapter ${ci + 1}/${book.chapters.length} · ${pct}% · ≈${fmtTime(chLeft)} left in chapter · ≈${fmtTime(bookLeft)} left in book`;
+    const pct = Math.floor((pos / Math.max(1, total - 1)) * 100);
+    $('posLabel').textContent = `Chapter ${ci + 1} of ${book.chapters.length} · ${pct}%`;
+    $('timeLabel').textContent = `${fmtTime(chLeft)} left in chapter · ${fmtTime(bookLeft)} in book`;
   }
 
   // ---------- Mode & settings ----------
@@ -315,6 +335,7 @@
     settings.wpm = Math.max(100, Math.min(1200, v));
     $('wpm').value = settings.wpm;
     $('wpmOut').textContent = settings.wpm;
+    fill($('wpm'));
     saveSettings();
     if (book) renderStats(chapterAt(pos));
   }
@@ -323,32 +344,96 @@
     if (settings.theme === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.dataset.theme = settings.theme;
     document.documentElement.style.setProperty('--scale', settings.fontSize / 100);
+    $('fontSizeOut').textContent = `${settings.fontSize}%`;
+    fill($('fontSize'));
   }
 
   $('wpm').addEventListener('input', (e) => setWpm(+e.target.value));
   $('slower').addEventListener('click', () => setWpm(settings.wpm - 25));
   $('faster').addEventListener('click', () => setWpm(settings.wpm + 25));
 
-  $('chunk').value = settings.chunk;
-  $('chunk').addEventListener('change', (e) => { settings.chunk = +e.target.value; saveSettings(); render(); });
+  const radios = (name, value, onChange) => {
+    for (const r of document.querySelectorAll(`input[name="${name}"]`)) {
+      r.checked = r.value === String(value);
+      r.addEventListener('change', () => onChange(r.value));
+    }
+  };
+  radios('chunk', settings.chunk, (v) => { settings.chunk = +v; saveSettings(); render(); });
+  radios('theme', settings.theme, (v) => { settings.theme = v; saveSettings(); applyAppearance(); });
 
   $('fontSize').value = settings.fontSize;
   $('fontSize').addEventListener('input', (e) => { settings.fontSize = +e.target.value; saveSettings(); applyAppearance(); });
 
-  $('theme').value = settings.theme;
-  $('theme').addEventListener('change', (e) => { settings.theme = e.target.value; saveSettings(); applyAppearance(); });
-
-  for (const id of ['pauses', 'ramp', 'bionic']) {
+  for (const id of ['pauses', 'ramp', 'bionic', 'keepAwake']) {
     $(id).checked = settings[id];
     $(id).addEventListener('change', (e) => {
       settings[id] = e.target.checked;
       saveSettings();
       if (id === 'bionic') { pacerChapter = -1; render(); }
+      else if (id === 'keepAwake') keepAwake();
       else if (book) renderStats(chapterAt(pos));
     });
   }
 
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
+
+  const dialog = $('settings');
+  $('openSettings').addEventListener('click', () => dialog.showModal());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+
+  // ---------- Keep the screen awake ----------
+  // Hold a screen wake lock while a book is open; let it go once the reader
+  // has been paused and untouched for a while, so the battery isn't drained.
+
+  const IDLE_RELEASE_MS = 5 * 60 * 1000;
+  const wakeSupported = 'wakeLock' in navigator;
+  let wakeLock = null;
+  let wakePending = false;
+  let idleTimer = 0;
+
+  function updateAwakeBadge() {
+    $('awakeBadge').hidden = !wakeLock;
+  }
+
+  async function keepAwake() {
+    clearTimeout(idleTimer);
+    if (!book || !settings.keepAwake || !wakeSupported || document.hidden) {
+      releaseAwake();
+      return;
+    }
+    if (!playing) idleTimer = setTimeout(releaseAwake, IDLE_RELEASE_MS);
+    if (wakeLock || wakePending) return;
+    wakePending = true;
+    try {
+      const lock = await navigator.wakeLock.request('screen');
+      lock.addEventListener('release', () => { if (wakeLock === lock) { wakeLock = null; updateAwakeBadge(); } });
+      wakeLock = lock;
+      // Settings may have changed while the request was in flight.
+      if (!settings.keepAwake || !book) releaseAwake();
+    } catch {
+      wakeLock = null;
+    } finally {
+      wakePending = false;
+      updateAwakeBadge();
+    }
+  }
+
+  function releaseAwake() {
+    clearTimeout(idleTimer);
+    const lock = wakeLock;
+    wakeLock = null;
+    if (lock) lock.release().catch(() => {});
+    updateAwakeBadge();
+  }
+
+  if (!wakeSupported) {
+    $('keepAwake').disabled = true;
+    $('awakeNote').textContent = 'Not supported by this browser. Try an up-to-date Chrome, Edge or Safari.';
+  }
+
+  // Any interaction counts as "still reading" and restarts the idle countdown.
+  for (const t of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(t, () => { if (book) keepAwake(); }, { passive: true });
+  $('pacerStage').addEventListener('scroll', () => { if (!playing) keepAwake(); }, { passive: true });
 
   // ---------- Navigation ----------
 
@@ -378,7 +463,7 @@
   $('pacerText').addEventListener('click', jumpToWord);
 
   document.addEventListener('keydown', (e) => {
-    if (!book || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!book || e.ctrlKey || e.metaKey || e.altKey || dialog.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
@@ -403,7 +488,11 @@
     if (book && e.key === ' ' && e.target.tagName === 'BUTTON') e.preventDefault();
   });
 
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause();
+    // The browser drops the wake lock when the page is hidden; take it again on return.
+    else keepAwake();
+  });
   window.addEventListener('pagehide', () => savePos(true));
 
   setWpm(settings.wpm);
