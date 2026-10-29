@@ -317,7 +317,10 @@
     const bookLeft = ((total - pos) / settings.wpm) * factor;
     const pct = Math.floor((pos / Math.max(1, total - 1)) * 100);
     $('posLabel').textContent = `Chapter ${ci + 1} of ${book.chapters.length} · ${pct}%`;
-    $('timeLabel').textContent = `${fmtTime(chLeft)} left in chapter · ${fmtTime(bookLeft)} in book`;
+    const bookPart = document.createElement('span');
+    bookPart.className = 'book-left';
+    bookPart.textContent = ` · ${fmtTime(bookLeft)} in book`;
+    $('timeLabel').replaceChildren(`${fmtTime(chLeft)} left in chapter`, bookPart);
   }
 
   // ---------- Mode & settings ----------
