@@ -11,7 +11,8 @@
   --highlight-text: #ffffff;
   --read-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
   --scale: 1;
-  color-scheme: light;
+  /* "only" stops browsers' forced dark mode from repainting the light themes. */
+  color-scheme: only light;
 }
 
 @media (prefers-color-scheme: dark) {
