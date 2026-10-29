@@ -7,7 +7,8 @@
   --accent: #2f6fde;
   --accent-text: #ffffff;
   --pivot: #e0322b;
-  --highlight: #ffe58a;
+  --highlight: #0b3fb0;
+  --highlight-text: #ffffff;
   --read-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
   --scale: 1;
   color-scheme: light;
@@ -23,7 +24,8 @@
     --accent: #6b9bff;
     --accent-text: #0d0d10;
     --pivot: #ff5c55;
-    --highlight: #7a5c0c;
+    --highlight: #ffd60a;
+    --highlight-text: #111111;
     color-scheme: dark;
   }
 }
@@ -37,7 +39,8 @@
   --accent: #6b9bff;
   --accent-text: #0d0d10;
   --pivot: #ff5c55;
-  --highlight: #7a5c0c;
+  --highlight: #ffd60a;
+  --highlight-text: #111111;
   color-scheme: dark;
 }
 
@@ -50,7 +53,8 @@
   --accent: #9a5b1e;
   --accent-text: #fff8ec;
   --pivot: #c2321f;
-  --highlight: #f1d48a;
+  --highlight: #5c2a00;
+  --highlight-text: #fff8ec;
 }
 
 * { box-sizing: border-box; }
@@ -195,14 +199,14 @@ select {
 .context.show { visibility: visible; }
 .context span { cursor: pointer; }
 .context span:hover { text-decoration: underline; }
-.context .cur { color: var(--text); background: var(--highlight); border-radius: 3px; }
+.context .cur { color: var(--highlight-text); background: var(--highlight); border-radius: 4px; padding: 0 3px; }
 
 .pacer { padding: 24px clamp(16px, 5vw, 56px); height: min(62vh, 640px); overflow-y: auto; }
 .chapter-title { font-family: var(--read-font); margin-top: 0; }
 .pacer-text { font-family: var(--read-font); font-size: calc(1.2rem * var(--scale)); line-height: 1.75; }
 .pacer-text p { margin: 0 0 1em; }
 .pacer-text span { cursor: pointer; border-radius: 3px; transition: background-color .08s; }
-.pacer-text .cur { background: var(--highlight); }
+.pacer-text .cur { color: var(--highlight-text); background: var(--highlight); box-shadow: 0 0 0 3px var(--highlight); border-radius: 4px; }
 .pacer-text b { font-weight: 700; }
 .pacer-text.bionic span { font-weight: 400; }
 
