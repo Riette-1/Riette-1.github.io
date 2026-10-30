@@ -11,7 +11,10 @@
   };
 
   const settings = Object.assign(
-    { wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'rsvp', keepAwake: true },
+    {
+      wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'rsvp', keepAwake: true,
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20,
+    },
     store.get('sr:settings', {}),
   );
   const saveSettings = () => store.set('sr:settings', settings);
@@ -135,6 +138,17 @@
     }
   }
 
+  // Minutes left (or for the whole book) at a pace. A speed setting adds the
+  // smart pauses; a real pace from the journal already includes them.
+  function minutesLeftAt(m, wpm, real, whole) {
+    if (!m || !m.total || !wpm) return null;
+    const words = whole ? m.total : m.total - m.pos;
+    if (real || !settings.pauses) return words / wpm;
+    // Older bookmarks only kept the weighted time left as "units".
+    const weighted = whole ? m.wTotal : m.wLeft != null ? m.wLeft : m.units;
+    return weighted != null ? weighted / wpm : null;
+  }
+
   // Progress summary for a shelved book, from its saved bookmark.
   function progressOf(b) {
     const m = b.mark;
@@ -144,7 +158,7 @@
       pct: finished ? 100 : Math.floor((m.pos / Math.max(1, m.total - 1)) * 100),
       started: m.pos > 0,
       finished,
-      left: m.units != null ? m.units / settings.wpm : null,
+      left: minutesLeftAt(m, settings.wpm, false),
       chapter: m.chapter,
     };
   }
@@ -235,14 +249,7 @@
       barFill.style.width = `${bp.pct}%`;
       bar.append(barFill);
       open.append(c, title, m, bar);
-
-      const remove = document.createElement('button');
-      remove.className = 'sb-remove';
-      remove.dataset.remove = b.key;
-      remove.title = 'Take off the shelf';
-      remove.setAttribute('aria-label', `Take ${b.title} off the shelf`);
-      remove.innerHTML = '<svg width="14" height="14"><use href="#i-x"/></svg>';
-      item.append(open, remove);
+      item.append(open);
       grid.append(item);
     });
 
@@ -267,23 +274,177 @@
     // Finished books start again from the top.
     if (progressOf(cur).finished) {
       store.set(cur.key, 0);
-      Library.setMark(cur.key, { ...cur.mark, pos: 0, finished: false });
+      Library.setMark(cur.key, { ...cur.mark, pos: 0, wLeft: cur.mark.wTotal, finished: false });
       if (book && bookKey === cur.key) pos = 0;
     }
     openFromShelf(cur.key);
   });
 
-  $('shelfGrid').addEventListener('click', async (e) => {
-    const rm = e.target.closest('[data-remove]');
-    if (rm) {
-      const b = shelfBooks.find((x) => x.key === rm.dataset.remove);
-      if (!b || !confirm(`Take “${b.title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.`)) return;
-      await Library.remove(b.key);
-      renderHome();
+  $('shelfGrid').addEventListener('click', (e) => {
+    const open = e.target.closest('.sb-open');
+    if (open) openBookSheet(open.dataset.key);
+  });
+  $('nsPlan').addEventListener('click', () => { if (shelfBooks[0]) openBookSheet(shelfBooks[0].key); });
+
+  // ---------- Book card: details and reading-time estimates ----------
+
+  const bookSheet = $('bookSheet');
+  let sheetBook = null;
+  let sheetCoverUrl = '';
+
+  // Books added before reading stats were kept have no word counts yet;
+  // read the stored file once to fill them in.
+  async function ensureStats(b) {
+    if (b.mark && b.mark.total && b.mark.wTotal != null) return;
+    const bk = await EPUB.load(b.file);
+    const at = Math.min(store.get(b.key, 0), bk.words.length - 1);
+    b.mark = markFor(bk, cumulativeWeights(bk), at);
+    Library.setMark(b.key, b.mark);
+  }
+
+  function paceChoices() {
+    const p = Journal.stats().paceStats;
+    const list = [{ id: 'setting', label: 'Speed setting', wpm: settings.wpm, real: false }];
+    if (p.average) list.push({ id: 'average', label: 'Your average', wpm: p.average, real: true });
+    if (p.best) list.push({ id: 'best', label: 'Your best', wpm: p.best.wpm, real: true });
+    list.push({ id: 'custom', label: 'Custom', wpm: settings.estCustom, real: false });
+    return list;
+  }
+
+  function renderPaceChoices() {
+    const host = $('bsPaces');
+    const list = paceChoices();
+    if (!list.some((c) => c.id === settings.estPace)) settings.estPace = 'setting';
+    host.replaceChildren();
+    for (const c of list) {
+      const label = document.createElement('label');
+      label.className = 'pace-chip';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'estPace';
+      input.value = c.id;
+      input.checked = c.id === settings.estPace;
+      const box = document.createElement('span');
+      const name = document.createElement('strong');
+      name.textContent = c.label;
+      const val = document.createElement('small');
+      val.textContent = c.id === 'custom' ? 'pick a speed' : `${c.wpm} wpm`;
+      box.append(name, val);
+      label.append(input, box);
+      host.append(label);
+    }
+  }
+
+  function renderEstimate() {
+    const b = sheetBook;
+    if (!b) return;
+    const choice = paceChoices().find((c) => c.id === settings.estPace) || paceChoices()[0];
+    $('bsCustomRow').hidden = choice.id !== 'custom';
+    $('bsCustom').value = settings.estCustom;
+    $('bsCustomOut').textContent = `${settings.estCustom} wpm`;
+    fill($('bsCustom'));
+
+    const m = b.mark;
+    if (!m || !m.total) {
+      for (const id of ['bsWhole', 'bsLeft']) $(id).textContent = '…';
+      $('bsPlan').textContent = '';
       return;
     }
-    const open = e.target.closest('.sb-open');
-    if (open) openFromShelf(open.dataset.key);
+    const p = progressOf(b);
+    const whole = minutesLeftAt(m, choice.wpm, choice.real, true);
+    const left = p.finished ? 0 : p.started ? minutesLeftAt(m, choice.wpm, choice.real) : whole;
+    $('bsWhole').textContent = fmtTime(whole);
+    $('bsLeft').textContent = p.finished ? 'Done' : fmtTime(left);
+    $('bsLeftLabel').textContent = p.finished ? 'you finished it' : p.started ? `left to read · ${100 - p.pct}% of the book` : 'left to read';
+
+    const daily = settings.dailyMinutes;
+    if (p.finished) {
+      $('bsPlan').textContent = `You’ve read this one. Reading it again would take about ${fmtTime(whole)}.`;
+    } else if (left <= daily) {
+      $('bsPlan').textContent = `That’s a single sitting: about ${fmtTime(left)} at ${choice.wpm} wpm.`;
+    } else {
+      const days = Math.ceil(left / daily);
+      const end = new Date();
+      end.setDate(end.getDate() + days - 1);
+      const when = end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+      const span = days < 14 ? `${days} days` : days < 60 ? `about ${Math.round(days / 7)} weeks` : `about ${Math.round(days / 30)} months`;
+      $('bsPlan').textContent = `At ${daily} minutes a day you’ll finish in ${span}, around ${when}.`;
+    }
+    $('bsNote').textContent = choice.real
+      ? 'Based on your real pace from the reading journal, which already includes pauses.'
+      : settings.pauses
+        ? 'Includes the smart pauses at punctuation, paragraphs and long words.'
+        : 'Smart pauses are off, so this is words divided by speed.';
+  }
+
+  async function openBookSheet(key) {
+    const b = shelfBooks.find((x) => x.key === key);
+    if (!b) return;
+    sheetBook = b;
+    $('bsTitle').textContent = b.title;
+    $('bsAuthor').textContent = b.author || '';
+    const cover = $('bsCover');
+    cover.replaceChildren();
+    if (sheetCoverUrl) URL.revokeObjectURL(sheetCoverUrl);
+    coverInto(cover, b);
+    sheetCoverUrl = coverUrls.pop() || '';
+    const p = progressOf(b);
+    $('bsBar').style.width = `${p.pct}%`;
+    $('bsPct').textContent = `${p.pct}%`;
+    $('bsOpenLabel').textContent = p.finished ? 'Read it again' : p.started ? 'Open to my bookmark' : 'Start reading';
+    renderPaceChoices();
+    for (const r of document.querySelectorAll('input[name="dailyMinutes"]')) r.checked = +r.value === settings.dailyMinutes;
+    $('bsFacts').textContent = b.mark && b.mark.chapters ? '' : 'Counting the words…';
+    renderEstimate();
+    bookSheet.showModal();
+
+    try {
+      await ensureStats(b);
+    } catch (err) {
+      console.warn('Could not read book for estimates', err);
+      if (sheetBook === b) $('bsFacts').textContent = 'This book couldn’t be read to count its words.';
+      return;
+    }
+    if (sheetBook !== b) return;
+    const m = b.mark;
+    $('bsFacts').textContent = `${m.total.toLocaleString()} words · ${m.chapters} ${m.chapters === 1 ? 'chapter' : 'chapters'}`;
+    renderEstimate();
+  }
+
+  $('bsPaces').addEventListener('change', (e) => {
+    if (e.target.name !== 'estPace') return;
+    settings.estPace = e.target.value;
+    saveSettings();
+    renderEstimate();
+  });
+  $('bsCustom').addEventListener('input', (e) => {
+    settings.estCustom = +e.target.value;
+    saveSettings();
+    renderEstimate();
+  });
+  for (const r of document.querySelectorAll('input[name="dailyMinutes"]')) {
+    r.addEventListener('change', () => { settings.dailyMinutes = +r.value; saveSettings(); renderEstimate(); });
+  }
+  bookSheet.addEventListener('click', (e) => { if (e.target === bookSheet) bookSheet.close(); });
+
+  $('bsOpen').addEventListener('click', () => {
+    const b = sheetBook;
+    if (!b) return;
+    bookSheet.close();
+    if (progressOf(b).finished) {
+      store.set(b.key, 0);
+      Library.setMark(b.key, { ...b.mark, pos: 0, wLeft: b.mark.wTotal, finished: false });
+      if (book && bookKey === b.key) pos = 0;
+    }
+    openFromShelf(b.key);
+  });
+
+  $('bsRemove').addEventListener('click', async () => {
+    const b = sheetBook;
+    if (!b || !confirm(`Take “${b.title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.`)) return;
+    bookSheet.close();
+    await Library.remove(b.key);
+    renderHome();
   });
 
   const journalEls = {
@@ -333,8 +494,8 @@
   const SENTENCE_END = /[.!?…]["'”’)\]]*$/;
   const CLAUSE_END = /[,;:—–]["'”’)\]]*$/;
 
-  function chapterAt(i) {
-    const ch = book.chapters;
+  function chapterAt(i, bk = book) {
+    const ch = bk.chapters;
     let lo = 0, hi = ch.length - 1;
     while (lo < hi) {
       const mid = (lo + hi + 1) >> 1;
@@ -370,32 +531,52 @@
     return Math.min(start + k, word.length - 1);
   }
 
-  // How long word i stays on screen, in units of one plain word.
-  function wordWeight(i) {
-    if (!settings.pauses) return 1;
-    const w = book.words[i];
+  // How long word i of a book stays on screen with smart pauses, in units of
+  // one plain word.
+  function weightOf(bk, i) {
+    const w = bk.words[i];
     let m = 1;
-    if (book.paraEnd[i]) m = 2.6;
+    if (bk.paraEnd[i]) m = 2.6;
     else if (SENTENCE_END.test(w)) m = 2.2;
     else if (CLAUSE_END.test(w)) m = 1.5;
     if (w.length > 8) m += Math.min(0.6, (w.length - 8) * 0.05);
     const next = i + 1;
-    if (next < book.words.length && book.chapters[chapterAt(next)].start === next) m = Math.max(m, 4);
+    if (next < bk.words.length && bk.chapters[chapterAt(next, bk)].start === next) m = Math.max(m, 4);
     return m;
   }
 
+  const wordWeight = (i) => (settings.pauses ? weightOf(book, i) : 1);
   const wordDelay = (i) => (60000 / settings.wpm) * wordWeight(i);
 
   // Running total of word weights, so the time between any two positions is
   // a subtraction: minutes = (cum[to] - cum[from]) / wpm.
-  function computeTiming() {
-    const n = book.words.length;
+  function cumulativeWeights(bk) {
+    const n = bk.words.length;
     const cum = new Float64Array(n + 1);
-    for (let i = 0; i < n; i++) cum[i + 1] = cum[i] + wordWeight(i);
-    book.cum = cum;
+    for (let i = 0; i < n; i++) cum[i + 1] = cum[i] + weightOf(bk, i);
+    return cum;
   }
 
-  const minutesBetween = (from, to) => (book.cum[to] - book.cum[from]) / settings.wpm;
+  function computeTiming() {
+    book.cum = cumulativeWeights(book);
+  }
+
+  const minutesBetween = (from, to) => (settings.pauses ? book.cum[to] - book.cum[from] : to - from) / settings.wpm;
+
+  // The bookmark summary kept for each book: enough to show progress and
+  // estimate reading times on the shelf without opening the book.
+  function markFor(bk, cum, at) {
+    const total = bk.words.length;
+    return {
+      pos: at,
+      total,
+      chapter: bk.chapters[chapterAt(at, bk)].title,
+      chapters: bk.chapters.length,
+      wTotal: cum[total],
+      wLeft: cum[total] - cum[at],
+      finished: at >= total - 1,
+    };
+  }
 
   // ---------- Playback ----------
 
@@ -472,14 +653,7 @@
     const now = Date.now();
     if (force || now - lastSaved > 3000) {
       store.set(bookKey, pos);
-      const total = book.words.length;
-      Library.setMark(bookKey, {
-        pos,
-        total,
-        chapter: book.chapters[chapterAt(pos)].title,
-        units: book.cum[total] - book.cum[pos],
-        finished: pos >= total - 1,
-      });
+      Library.setMark(bookKey, markFor(book, book.cum, pos));
       lastSaved = now;
     }
   }
@@ -652,7 +826,6 @@
       saveSettings();
       if (id === 'bionic') { pacerChapter = -1; render(); }
       else if (id === 'keepAwake') keepAwake();
-      else if (id === 'pauses' && book) { computeTiming(); renderStats(chapterAt(pos)); }
       else if (book) renderStats(chapterAt(pos));
     });
   }
@@ -844,7 +1017,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
