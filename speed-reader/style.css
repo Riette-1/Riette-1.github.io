@@ -230,6 +230,7 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
 .dropzone h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 5vw, 2.4rem); letter-spacing: -0.02em; }
 .dropzone p { margin: 0 auto 20px; max-width: 460px; color: var(--muted); }
 .dropzone .hint { margin: 12px auto 0; font-size: 14px; }
+.dropzone .tagline { margin-top: -2px; margin-bottom: 14px; font-size: 1.1rem; font-weight: 600; color: var(--accent); }
 
 .techniques { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
 .techniques article { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
@@ -248,6 +249,20 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
 .flash-demo span { color: var(--pivot); }
 .pacer-demo span { background: var(--highlight); color: var(--highlight-text); border-radius: 4px; padding: 0 3px; }
 .timing-demo span { color: var(--accent); font-weight: 700; padding: 0 .3em 0 0; }
+
+.credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 40px 0 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+}
+.credit strong { color: var(--text); font-weight: 600; }
+.credit-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--grad); color: var(--accent-text); }
 
 /* ---------- Nightstand ---------- */
 

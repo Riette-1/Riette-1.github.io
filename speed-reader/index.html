@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
-  <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css?v=10" />
-  <script src="epub.js?v=10" defer></script>
-  <script src="library.js?v=10" defer></script>
-  <script src="journal.js?v=10" defer></script>
-  <script src="dictionary.js?v=10" defer></script>
-  <script src="app.js?v=10" defer></script>
+  <meta name="author" content="Riëtte" />
+  <title>Nook · Read Faster</title>
+  <meta name="description" content="Nook: read faster, from your favourite corner. A speed reader for your EPUB books that keeps everything on your device." />
+  <meta name="application-name" content="Nook" />
+  <meta name="apple-mobile-web-app-title" content="Nook" />
+  <link rel="stylesheet" href="style.css?v=12" />
+  <script src="epub.js?v=12" defer></script>
+  <script src="library.js?v=12" defer></script>
+  <script src="journal.js?v=12" defer></script>
+  <script src="dictionary.js?v=12" defer></script>
+  <script src="app.js?v=12" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -39,7 +43,7 @@
   </svg>
 
   <header class="topbar">
-    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="18" height="18"><use href="#i-bolt"/></svg></span><span class="brand-name">Speed Reader</span></div>
+    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="18" height="18"><use href="#i-bolt"/></svg></span><span class="brand-name">Nook</span></div>
     <div class="book-info" id="bookInfo">
       <div class="book-title" id="bookTitle"></div>
       <div class="book-sub" id="bookSub"></div>
@@ -76,7 +80,8 @@
     <section class="hero" id="hero">
       <div class="dropzone" id="dropzone">
         <div class="hero-icon"><svg width="34" height="34"><use href="#i-bolt"/></svg></div>
-        <h1>Welcome to your reading nook</h1>
+        <h1>Welcome to Nook</h1>
+        <p class="tagline">Read faster, from your favourite corner.</p>
         <p>Your bookshelf is empty. Add an <strong>.epub</strong> to get started. Books stay on this device and are never uploaded.</p>
         <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg>Put a book on the shelf</label>
         <p class="hint">or drop an EPUB here</p>
@@ -146,6 +151,11 @@
         <p>Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.</p>
       </article>
     </section>
+
+    <footer class="credit">
+      <span class="credit-mark"><svg width="14" height="14"><use href="#i-bolt"/></svg></span>
+      <span><strong>Nook</strong> · Created by <strong>Riëtte</strong></span>
+    </footer>
   </main>
 
   <main id="reader" class="reader" hidden>
