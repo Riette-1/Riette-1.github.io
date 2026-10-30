@@ -158,6 +158,25 @@ const EPUB = (() => {
     return titles;
   }
 
+  // EPUB 3 marks the cover with properties="cover-image"; EPUB 2 uses
+  // <meta name="cover" content="item-id">. Fall back to an image named "cover".
+  async function readCover(zip, manifest, opf) {
+    const items = [...manifest.values()];
+    const isImage = (m) => m && /^image\//.test(m.type) && zip.has(m.path);
+    let item = items.find((m) => /\bcover-image\b/.test(m.properties));
+    if (!isImage(item)) {
+      const meta = byTag(opf, 'meta').find((m) => m.getAttribute('name') === 'cover');
+      item = meta && manifest.get(meta.getAttribute('content'));
+    }
+    if (!isImage(item)) item = items.find((m) => isImage(m) && /cover/i.test(m.path));
+    if (!isImage(item)) return null;
+    try {
+      return new Blob([await zip.bytes(item.path)], { type: item.type });
+    } catch {
+      return null;
+    }
+  }
+
   async function load(file, onProgress = () => {}) {
     const zip = readZip(await file.arrayBuffer());
 
@@ -188,6 +207,7 @@ const EPUB = (() => {
     if (!spine.length) throw new Error('No readable chapters found in this EPUB.');
 
     const tocTitles = await readToc(zip, manifest, opf, opfDir);
+    const cover = await readCover(zip, manifest, opf);
 
     const words = [];
     const paraEnd = [];
@@ -221,7 +241,7 @@ const EPUB = (() => {
     }
 
     if (!words.length) throw new Error('This EPUB contains no readable text.');
-    return { title, author, words, paraEnd: Uint8Array.from(paraEnd), chapters };
+    return { title, author, cover, words, paraEnd: Uint8Array.from(paraEnd), chapters };
   }
 
   return { load };
