@@ -190,6 +190,7 @@ const EPUB = (() => {
     const meta = byTag(opf, 'metadata')[0] || opf;
     const title = (byTag(meta, 'title')[0]?.textContent || file.name.replace(/\.epub$/i, '')).trim();
     const author = (byTag(meta, 'creator')[0]?.textContent || '').trim();
+    const language = (byTag(meta, 'language')[0]?.textContent || '').trim();
 
     const manifest = new Map();
     for (const item of byTag(opf, 'item')) {
@@ -241,7 +242,7 @@ const EPUB = (() => {
     }
 
     if (!words.length) throw new Error('This EPUB contains no readable text.');
-    return { title, author, cover, words, paraEnd: Uint8Array.from(paraEnd), chapters };
+    return { title, author, language, cover, words, paraEnd: Uint8Array.from(paraEnd), chapters };
   }
 
   return { load };
