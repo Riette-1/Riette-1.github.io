@@ -6,12 +6,12 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css?v=7" />
-  <script src="epub.js?v=7" defer></script>
-  <script src="library.js?v=7" defer></script>
-  <script src="journal.js?v=7" defer></script>
-  <script src="dictionary.js?v=7" defer></script>
-  <script src="app.js?v=7" defer></script>
+  <link rel="stylesheet" href="style.css?v=8" />
+  <script src="epub.js?v=8" defer></script>
+  <script src="library.js?v=8" defer></script>
+  <script src="journal.js?v=8" defer></script>
+  <script src="dictionary.js?v=8" defer></script>
+  <script src="app.js?v=8" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -96,7 +96,7 @@
         <div class="tile"><span class="tile-value" id="jToday">0 min</span><span class="tile-label">read today</span></div>
         <div class="tile"><span class="tile-value" id="jStreak">0</span><span class="tile-label">day streak</span></div>
         <div class="tile"><span class="tile-value" id="jWeek">0 min</span><span class="tile-label">read this week</span></div>
-        <div class="tile"><span class="tile-value" id="jPace">–</span><span class="tile-label">real pace, wpm</span></div>
+        <div class="tile"><span class="tile-value" id="jWords">0</span><span class="tile-label">words this week</span></div>
         <div class="tile"><span class="tile-value" id="jFinished">0</span><span class="tile-label" id="jFinishedLabel">books finished</span></div>
       </div>
       <div class="chart-card">
@@ -108,6 +108,20 @@
           <div class="chart-tip" id="jTip" hidden></div>
         </div>
         <div class="bar-axis" id="jAxis" aria-hidden="true"></div>
+      </div>
+      <div class="chart-card pace-card">
+        <div class="chart-title">Reading pace</div>
+        <div class="pace-stats">
+          <div class="pace-stat"><span class="pace-value" id="pAvg">–</span><span class="tile-label">average, wpm</span></div>
+          <div class="pace-stat"><span class="pace-value" id="pBest">–</span><span class="tile-label" id="pBestLabel">best session, wpm</span><span class="pace-sub" id="pBestWhen"></span></div>
+          <div class="pace-stat"><span class="pace-value" id="pChange">–</span><span class="tile-label">wpm since your first week</span><span class="pace-sub" id="pChangeWhen"></span></div>
+        </div>
+        <div class="pace-plot">
+          <div class="pace-chart" id="pChart"></div>
+          <p class="chart-empty" id="pEmpty">Read for a minute or more and your pace will appear here.</p>
+          <div class="chart-tip" id="pTip" hidden></div>
+        </div>
+        <p class="pace-note">Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.</p>
       </div>
     </section>
     <section class="techniques" id="techniques">

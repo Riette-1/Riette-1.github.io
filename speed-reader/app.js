@@ -287,10 +287,21 @@
   });
 
   const journalEls = {
-    today: $('jToday'), streak: $('jStreak'), week: $('jWeek'), pace: $('jPace'), finished: $('jFinished'), finishedLabel: $('jFinishedLabel'),
+    today: $('jToday'), streak: $('jStreak'), week: $('jWeek'), words: $('jWords'), finished: $('jFinished'), finishedLabel: $('jFinishedLabel'),
     bars: $('jBars'), axis: $('jAxis'), max: $('jMax'), empty: $('jEmpty'),
+    paceCard: {
+      avg: $('pAvg'), best: $('pBest'), bestLabel: $('pBestLabel'), bestWhen: $('pBestWhen'), change: $('pChange'), changeWhen: $('pChangeWhen'),
+      chart: $('pChart'), paceEmpty: $('pEmpty'), paceTip: $('pTip'),
+    },
   };
   const renderJournal = () => Journal.render(journalEls);
+
+  // The pace chart is drawn to the card's width, so redraw it when that changes.
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (!$('journal').hidden && !$('welcome').hidden) renderJournal(); }, 150);
+  });
 
   // Chart tooltip: follows hover on desktop, tap or focus on touch.
   const tip = $('jTip');
