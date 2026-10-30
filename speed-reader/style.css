@@ -828,6 +828,16 @@ body.playing .tap-hint { opacity: 0; }
 .transport { display: flex; gap: 10px; align-items: center; }
 .speed { display: flex; gap: 6px; align-items: center; }
 .speed .range { width: 120px; margin-left: 6px; }
+
+/* Storytime swaps the reading-speed control for the voice and its speed. */
+.story-controls { display: none; gap: 6px; align-items: center; min-width: 0; }
+.story-controls select { flex: 1; min-width: 0; max-width: 220px; margin-left: 6px; padding-top: 7px; padding-bottom: 7px; font-size: 14px; }
+body.mode-story .story-controls { display: flex; }
+body.mode-story .speed { display: none; }
+/* Page mode is read at your own pace: no play button, the arrows turn pages. */
+body.mode-page #play { display: none; }
+.pacer-text .speaking { background: var(--accent-soft); border-radius: 0; box-shadow: 0.3em 0 0 var(--accent-soft); }
+.pacer-text .cur.speaking { background: var(--highlight); border-radius: 4px; box-shadow: 0 0 0 3px var(--highlight); }
 .speed-value { display: flex; flex-direction: column; align-items: center; line-height: 1; min-width: 46px; }
 .speed-value output { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .speed-value span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
@@ -978,6 +988,11 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
   .transport { order: 1; gap: 8px; }
   .speed { order: 2; width: 100%; }
   .speed .range { flex: 1; width: auto; }
+  .story-controls { order: 2; width: 100%; }
+  .story-controls select { max-width: none; }
+  .mode-bar { flex-wrap: wrap; gap: 8px; }
+  .mode-bar .segmented { width: 100%; }
+  .mode-bar .tab { flex: 1; padding: 9px 4px; text-align: center; }
   .dock-end { display: none; }
   .awake { padding: 7px; }
   .btn.round { width: 46px; height: 46px; }
