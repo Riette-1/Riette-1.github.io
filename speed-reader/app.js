@@ -12,12 +12,20 @@
 
   const settings = Object.assign(
     {
-      wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'rsvp', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20,
+      wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '',
     },
     store.get('sr:settings', {}),
   );
   const saveSettings = () => store.set('sr:settings', settings);
+  // Pacer became the default mode; move everyone onto it once.
+  if ((settings.version || 1) < 2) {
+    settings.mode = 'pacer';
+    settings.version = 2;
+    saveSettings();
+  }
+  const MODES = ['pacer', 'rsvp', 'page', 'story'];
+  if (!MODES.includes(settings.mode)) settings.mode = 'pacer';
 
   let book = null;
   let bookKey = '';
@@ -611,21 +619,30 @@
   }
 
   function play() {
-    if (!book || playing) return;
+    if (!book || playing || settings.mode === 'page') return;
+    if (settings.mode === 'story' && !Storytime.supported) {
+      showStatus('This browser can’t read aloud. Try an up-to-date Chrome, Edge or Safari.', true, 6000);
+      return;
+    }
     playing = true;
     rampStep = 0;
     setPlayIcon();
     $('rsvpContext').classList.remove('show');
     closeDefinition();
     keepAwake();
-    Journal.start();
-    step();
+    if (settings.mode === 'story') {
+      tell();
+    } else {
+      Journal.start();
+      step();
+    }
   }
 
   function pause() {
     clearTimeout(timer);
     if (!playing) return;
     playing = false;
+    if (settings.mode === 'story') Storytime.stop();
     Journal.flush(false);
     setPlayIcon();
     savePos(true);
@@ -642,13 +659,104 @@
 
   const toggle = () => (playing ? pause() : play());
 
-  function seek(i) {
+  // In Page mode a seek scrolls the page to the word, unless the reader
+  // just tapped it (it's already on screen).
+  function seek(i, { scroll = true } = {}) {
     if (!book) return;
     pos = Math.max(0, Math.min(book.words.length - 1, i));
     rampStep = 0;
-    if (playing) { clearTimeout(timer); step(); } else render();
+    if (settings.mode === 'page') pageScrollPending = scroll;
+    if (playing && settings.mode === 'story') { render(); tell(); }
+    else if (playing) { clearTimeout(timer); step(); }
+    else render();
     savePos(true);
   }
+
+  // ---------- Storytime ----------
+
+  let storyChunk = null;
+  let chunkSpans = [];
+
+  // Softly mark the sentence being read, on top of the current-word highlight.
+  function markChunk() {
+    chunkSpans.forEach((sp) => sp.classList.remove('speaking'));
+    chunkSpans = [];
+    if (!storyChunk || settings.mode !== 'story') return;
+    const ci = chapterAt(storyChunk[0]);
+    if (ci !== pacerChapter) return;
+    const base = book.chapters[ci].start;
+    for (let i = storyChunk[0]; i <= storyChunk[1]; i++) {
+      const sp = pacerSpans[i - base];
+      if (sp) { sp.classList.add('speaking'); chunkSpans.push(sp); }
+    }
+  }
+
+  function tell() {
+    Storytime.speak({
+      words: book.words,
+      isBreak,
+      from: pos,
+      voiceURI: settings.voiceURI,
+      rate: settings.storyRate,
+      onChunk: (start, end) => {
+        storyChunk = [start, end];
+        pos = start;
+        render();
+        markChunk();
+      },
+      onWord: (i) => {
+        if (i === pos) return;
+        pos = i;
+        render();
+      },
+      onDone: (reachedEnd, error) => {
+        if (reachedEnd) {
+          pos = book.words.length - 1;
+          pause();
+          showStatus(`That’s the end of “${book.title}”. Sweet dreams!`, false, 6000);
+        } else {
+          pause();
+          showStatus(`The voice stopped (${error || 'unknown error'}). Press play to carry on.`, true, 6000);
+        }
+      },
+    });
+  }
+
+  function setStoryRate(v) {
+    settings.storyRate = Math.round(Math.max(0.6, Math.min(2, v)) * 10) / 10;
+    $('storyRateOut').textContent = `${settings.storyRate.toFixed(1)}×`;
+    saveSettings();
+    if (playing && settings.mode === 'story') tell();
+  }
+
+  function fillVoices() {
+    const sel = $('storyVoice');
+    const list = Storytime.voices();
+    sel.replaceChildren();
+    if (!Storytime.supported || !list.length) {
+      sel.add(new Option(Storytime.supported ? 'Default voice' : 'No voices on this browser', ''));
+      sel.disabled = !Storytime.supported;
+      return;
+    }
+    sel.disabled = false;
+    // The reader's own language first, then the rest alphabetically.
+    const lang = (navigator.language || 'en').slice(0, 2);
+    const sorted = [...list].sort((a, b) => (b.lang.startsWith(lang) - a.lang.startsWith(lang)) || a.name.localeCompare(b.name));
+    for (const v of sorted) sel.add(new Option(`${v.name} (${v.lang})`, v.voiceURI));
+    const chosen = Storytime.pickVoice(settings.voiceURI);
+    if (chosen) sel.value = chosen.voiceURI;
+  }
+
+  $('storySlower').addEventListener('click', () => setStoryRate(settings.storyRate - 0.1));
+  $('storyFaster').addEventListener('click', () => setStoryRate(settings.storyRate + 0.1));
+  $('storyVoice').addEventListener('change', (e) => {
+    settings.voiceURI = e.target.value;
+    saveSettings();
+    if (playing && settings.mode === 'story') tell();
+  });
+  Storytime.onVoicesChanged(fillVoices);
+  fillVoices();
+  setStoryRate(settings.storyRate);
 
   function savePos(force) {
     if (!book) return;
@@ -665,7 +773,9 @@
   function render() {
     if (!book) return;
     const ci = chapterAt(pos);
-    if (settings.mode === 'rsvp') renderRsvp(); else renderPacer(ci);
+    if (settings.mode === 'rsvp') renderRsvp();
+    else if (settings.mode === 'page') renderPage(ci);
+    else renderPacer(ci);
 
     if (ci !== lastChapter) {
       lastChapter = ci;
@@ -738,7 +848,68 @@
     host.replaceChildren(frag);
     pacerChapter = ci;
     pacerCur = null;
+    chunkSpans = [];
+    markChunk();
     $('pacerStage').scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  // ---------- Page mode: plain reading, the bookmark follows the scroll ----------
+
+  let pageScrollPending = true;
+  let pageScrolling = false;
+
+  function renderPage(ci) {
+    if (ci !== pacerChapter) buildPacer(ci);
+    if (pacerCur) { pacerCur.classList.remove('cur'); pacerCur = null; }
+    if (!pageScrollPending) return;
+    pageScrollPending = false;
+    const span = pacerSpans[pos - book.chapters[ci].start];
+    const stage = $('pacerStage');
+    pageScrolling = true;
+    if (span && pos > book.chapters[ci].start) {
+      stage.scrollTo({ top: stage.scrollTop + span.getBoundingClientRect().top - stage.getBoundingClientRect().top - 24, behavior: 'instant' });
+    } else {
+      stage.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    requestAnimationFrame(() => { pageScrolling = false; });
+  }
+
+  // The first word at the top of the visible page becomes the bookmark.
+  function wordAtTopOfPage() {
+    const top = $('pacerStage').getBoundingClientRect().top + 8;
+    let lo = 0;
+    let hi = pacerSpans.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (pacerSpans[mid].getBoundingClientRect().bottom < top) lo = mid + 1; else hi = mid;
+    }
+    return book.chapters[pacerChapter].start + lo;
+  }
+
+  let pageScrollTimer = 0;
+  $('pacerStage').addEventListener('scroll', () => {
+    if (settings.mode !== 'page' || !book || pageScrolling || !pacerSpans.length) return;
+    clearTimeout(pageScrollTimer);
+    pageScrollTimer = setTimeout(() => {
+      pos = wordAtTopOfPage();
+      const ci = chapterAt(pos);
+      $('progress').value = pos;
+      fill($('progress'));
+      renderStats(ci);
+      // Scrolling is Page mode's only signal, so save as soon as it settles.
+      savePos(true);
+    }, 120);
+  }, { passive: true });
+
+  function turnPage(dir) {
+    const stage = $('pacerStage');
+    const atEnd = stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 4;
+    const atStart = stage.scrollTop <= 0;
+    const ci = chapterAt(pos);
+    // Past the edge of a chapter, carry on into the next or previous one.
+    if (dir > 0 && atEnd && ci < book.chapters.length - 1) return seek(book.chapters[ci + 1].start);
+    if (dir < 0 && atStart && ci > 0) return seek(book.chapters[ci - 1].start);
+    stage.scrollBy({ top: dir * stage.clientHeight * 0.85, behavior: 'smooth' });
   }
 
   function renderPacer(ci) {
@@ -779,13 +950,24 @@
 
   // ---------- Mode & settings ----------
 
+  const BACK_LABELS = { page: ['Previous page', 'Next page'], other: ['Previous sentence (←)', 'Next sentence (→)'] };
+
   function setMode(mode) {
+    if (playing) pause();
     settings.mode = mode;
     saveSettings();
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
+    for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     $('rsvpStage').hidden = mode !== 'rsvp';
-    $('pacerStage').hidden = mode !== 'pacer';
-    if (playing) { clearTimeout(timer); step(); } else render();
+    $('pacerStage').hidden = mode === 'rsvp';
+    const [back, fwd] = BACK_LABELS[mode === 'page' ? 'page' : 'other'];
+    $('back').title = back; $('back').setAttribute('aria-label', back);
+    $('fwd').title = fwd; $('fwd').setAttribute('aria-label', fwd);
+    storyChunk = null;
+    // Each mode draws the chapter differently, so start it afresh.
+    pacerChapter = -1;
+    pageScrollPending = true;
+    render();
   }
 
   function setWpm(v) {
@@ -902,8 +1084,8 @@
 
   $('play').addEventListener('click', toggle);
   $('rsvpWord').parentElement.addEventListener('click', toggle);
-  $('back').addEventListener('click', () => seek(prevSentence()));
-  $('fwd').addEventListener('click', () => seek(nextSentence()));
+  $('back').addEventListener('click', () => (settings.mode === 'page' ? turnPage(-1) : seek(prevSentence())));
+  $('fwd').addEventListener('click', () => (settings.mode === 'page' ? turnPage(1) : seek(nextSentence())));
   $('prevChapter').addEventListener('click', () => {
     const ci = chapterAt(pos);
     gotoChapter(pos > book.chapters[ci].start + 20 ? ci : ci - 1);
@@ -923,7 +1105,7 @@
   const jumpToWord = (e) => {
     if (!getSelection().isCollapsed) return;
     const s = e.target.closest('[data-i]');
-    if (s) seek(+s.dataset.i);
+    if (s) seek(+s.dataset.i, { scroll: false });
   };
   $('rsvpContext').addEventListener('click', (e) => { e.stopPropagation(); jumpToWord(e); });
   $('pacerText').addEventListener('click', jumpToWord);
@@ -1143,15 +1325,15 @@
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
     const actions = {
-      ' ': toggle,
-      ArrowLeft: () => seek(prevSentence()),
-      ArrowRight: () => seek(nextSentence()),
+      ' ': () => (settings.mode === 'page' ? turnPage(1) : toggle()),
+      ArrowLeft: () => $('back').click(),
+      ArrowRight: () => $('fwd').click(),
       ArrowUp: () => setWpm(settings.wpm + 25),
       ArrowDown: () => setWpm(settings.wpm - 25),
       '[': () => $('prevChapter').click(),
       ']': () => $('nextChapter').click(),
-      m: () => setMode(settings.mode === 'rsvp' ? 'pacer' : 'rsvp'),
-      M: () => setMode(settings.mode === 'rsvp' ? 'pacer' : 'rsvp'),
+      m: () => setMode(MODES[(MODES.indexOf(settings.mode) + 1) % MODES.length]),
+      M: () => setMode(MODES[(MODES.indexOf(settings.mode) + 1) % MODES.length]),
       d: () => lookUp(pos),
       D: () => lookUp(pos),
       Escape: pause,
@@ -1166,7 +1348,8 @@
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) pause();
+    // Storytime keeps talking where the browser allows it (e.g. screen off).
+    if (document.hidden) { if (settings.mode !== 'story') pause(); }
     // The browser drops the wake lock when the page is hidden; take it again on return.
     else keepAwake();
   });

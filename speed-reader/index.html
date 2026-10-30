@@ -15,12 +15,13 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=13" />
-  <script src="epub.js?v=13" defer></script>
-  <script src="library.js?v=13" defer></script>
-  <script src="journal.js?v=13" defer></script>
-  <script src="dictionary.js?v=13" defer></script>
-  <script src="app.js?v=13" defer></script>
+  <link rel="stylesheet" href="style.css?v=14" />
+  <script src="epub.js?v=14" defer></script>
+  <script src="library.js?v=14" defer></script>
+  <script src="journal.js?v=14" defer></script>
+  <script src="dictionary.js?v=14" defer></script>
+  <script src="storytime.js?v=14" defer></script>
+  <script src="app.js?v=14" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -166,8 +167,10 @@
   <main id="reader" class="reader" hidden>
     <div class="mode-bar fade-when-playing">
       <div class="segmented" role="tablist" aria-label="Reading mode">
-        <button role="tab" class="tab" data-mode="rsvp" aria-selected="true">Flash</button>
-        <button role="tab" class="tab" data-mode="pacer" aria-selected="false">Pacer</button>
+        <button role="tab" class="tab" data-mode="pacer" aria-selected="true">Pacer</button>
+        <button role="tab" class="tab" data-mode="rsvp" aria-selected="false">Flash</button>
+        <button role="tab" class="tab" data-mode="page" aria-selected="false">Page</button>
+        <button role="tab" class="tab" data-mode="story" aria-selected="false">Storytime</button>
       </div>
       <select id="chapterSelect" aria-label="Chapter"></select>
     </div>
@@ -212,6 +215,12 @@
           <button class="btn round play" id="play" title="Play / pause (Space)" aria-label="Play"><svg class="ic" width="20" height="20"><use href="#i-play"/></svg></button>
           <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic" width="20" height="20"><use href="#i-fwd"/></svg></button>
           <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic" width="20" height="20"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="story-controls fade-when-playing" id="storyControls">
+          <button class="btn round sm" id="storySlower" title="Speak slower" aria-label="Speak slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
+          <div class="speed-value"><output id="storyRateOut">1.0×</output><span>voice</span></div>
+          <button class="btn round sm" id="storyFaster" title="Speak faster" aria-label="Speak faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>
+          <select id="storyVoice" aria-label="Voice"></select>
         </div>
         <div class="dock-end"></div>
       </div>
@@ -360,7 +369,7 @@
           <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous / next sentence</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next chapter</dd>
-          <dt><kbd>M</kbd></dt><dd>Switch Flash / Pacer</dd>
+          <dt><kbd>M</kbd></dt><dd>Next mode: Pacer, Flash, Page, Storytime</dd>
           <dt><kbd>D</kbd></dt><dd>Look up the current word</dd>
         </dl>
         <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it. Select words (press and drag, or double-click one) to look a word up or share a quote on WhatsApp.</p>
