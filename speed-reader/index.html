@@ -6,12 +6,12 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css?v=9" />
-  <script src="epub.js?v=9" defer></script>
-  <script src="library.js?v=9" defer></script>
-  <script src="journal.js?v=9" defer></script>
-  <script src="dictionary.js?v=9" defer></script>
-  <script src="app.js?v=9" defer></script>
+  <link rel="stylesheet" href="style.css?v=10" />
+  <script src="epub.js?v=10" defer></script>
+  <script src="library.js?v=10" defer></script>
+  <script src="journal.js?v=10" defer></script>
+  <script src="dictionary.js?v=10" defer></script>
+  <script src="app.js?v=10" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -30,6 +30,10 @@
       <symbol id="i-x" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
       <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
       <symbol id="i-bookmark" viewBox="0 0 24 24"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></g></symbol>
       <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2 4 13.5h6.5L9.5 22 20 9.5h-6.6z"/></symbol>
     </defs>
   </svg>
@@ -162,7 +166,7 @@
         <div class="guide bottom"></div>
       </div>
       <p class="context" id="rsvpContext"></p>
-      <p class="tap-hint" id="tapHint">Tap to play · hold a word below to look it up</p>
+      <p class="tap-hint" id="tapHint">Tap to play · select words below to look them up or share</p>
     </div>
 
     <div id="pacerStage" class="stage pacer" hidden>
@@ -207,6 +211,33 @@
     <div class="def-body" id="defBody"></div>
     <p class="def-src">From the <a href="https://dictionaryapi.dev/" target="_blank" rel="noopener">Free Dictionary</a> · <a id="defMore" target="_blank" rel="noopener">More on Wiktionary</a></p>
   </div>
+
+  <div class="sel-bar" id="selBar" role="toolbar" aria-label="Selected text" hidden>
+    <button type="button" id="selDefine"><svg class="ic" width="20" height="20"><use href="#i-search"/></svg>Look up</button>
+    <button type="button" id="selShare"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg>Share quote</button>
+  </div>
+
+  <dialog id="shareSheet" class="sheet share-sheet" aria-labelledby="shareTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="shareTitle">Share a quote</h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <figure class="quote-card">
+        <blockquote id="shareQuote"></blockquote>
+        <figcaption id="shareSource"></figcaption>
+      </figure>
+      <p class="share-note" id="shareNote"></p>
+      <label class="field-label" for="shareCaption">Add a caption</label>
+      <textarea id="shareCaption" rows="3" maxlength="500" placeholder="This line made me think of you…"></textarea>
+      <label class="toggle"><span><strong>Include the book’s title</strong><small>Adds the title and author under the quote</small></span><input type="checkbox" id="shareSourceToggle" checked /></label>
+      <div class="share-actions">
+        <button type="button" class="btn whatsapp big" id="shareWhatsApp"><svg class="ic" width="20" height="20"><use href="#i-chat"/></svg>Send on WhatsApp</button>
+        <button type="button" class="btn secondary" id="shareOther"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg>Other apps</button>
+        <button type="button" class="btn link" id="shareCopy">Copy text</button>
+      </div>
+    </form>
+  </dialog>
 
   <p class="toast" id="loadStatus" role="status"></p>
 
@@ -317,7 +348,7 @@
           <dt><kbd>M</kbd></dt><dd>Switch Flash / Pacer</dd>
           <dt><kbd>D</kbd></dt><dd>Look up the current word</dd>
         </dl>
-        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it. Press and hold (or double-click) a word to see what it means.</p>
+        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it. Select words (press and drag, or double-click one) to look a word up or share a quote on WhatsApp.</p>
       </section>
     </form>
   </dialog>

@@ -101,6 +101,8 @@
   function goHome() {
     pause();
     closeDefinition();
+    $('selBar').hidden = true;
+    getSelection().removeAllRanges();
     savePos(true);
     $('reader').hidden = true;
     $('welcome').hidden = false;
@@ -910,39 +912,158 @@
   $('chapterSelect').addEventListener('change', (e) => gotoChapter(+e.target.value));
   $('progress').addEventListener('input', (e) => seek(+e.target.value));
 
-  // A long press (or double-click) on a word looks it up; the click that
-  // ends a long press shouldn't also move the bookmark.
-  let pressTimer = 0;
-  let pressAt = null;
-  let suppressClick = false;
+  // ---------- Selecting words: look up or share as a quote ----------
 
+  const selHosts = [$('pacerText'), $('rsvpContext')];
+  const selBar = $('selBar');
+  const MAX_QUOTE_WORDS = 400;
+  let selTimer = 0;
+
+  // Tapping a word jumps to it, unless the tap finished a text selection.
   const jumpToWord = (e) => {
-    if (suppressClick) { suppressClick = false; return; }
+    if (!getSelection().isCollapsed) return;
     const s = e.target.closest('[data-i]');
     if (s) seek(+s.dataset.i);
   };
   $('rsvpContext').addEventListener('click', (e) => { e.stopPropagation(); jumpToWord(e); });
   $('pacerText').addEventListener('click', jumpToWord);
 
-  for (const host of [$('pacerText'), $('rsvpContext')]) {
-    host.addEventListener('pointerdown', (e) => {
-      const s = e.target.closest('[data-i]');
-      if (!s) return;
-      suppressClick = false;
-      pressAt = { x: e.clientX, y: e.clientY };
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => { suppressClick = true; lookUp(+s.dataset.i); }, 500);
-    });
-    host.addEventListener('pointermove', (e) => {
-      if (pressAt && Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y) > 10) clearTimeout(pressTimer);
-    });
-    for (const t of ['pointerup', 'pointercancel', 'pointerleave']) host.addEventListener(t, () => clearTimeout(pressTimer));
-    host.addEventListener('dblclick', (e) => {
-      const s = e.target.closest('[data-i]');
-      if (s) { e.stopPropagation(); lookUp(+s.dataset.i); }
-    });
-    host.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-i]')) e.preventDefault(); });
+  function currentSelection() {
+    const sel = getSelection();
+    if (!book || $('reader').hidden || !sel.rangeCount || sel.isCollapsed) return null;
+    const range = sel.getRangeAt(0);
+    const host = selHosts.find((h) => h.contains(range.commonAncestorContainer));
+    return host ? { range, host } : null;
   }
+
+  // The first and last book word touched by the selection, ignoring a word
+  // the selection only grazes at its very edge.
+  function selectedWordRange(s) {
+    let first = -1;
+    let last = -1;
+    for (const span of s.host.querySelectorAll('[data-i]')) {
+      if (s.range.intersectsNode(span)) {
+        if (first < 0) first = +span.dataset.i;
+        last = +span.dataset.i;
+      } else if (first >= 0) break;
+    }
+    if (first < 0) return null;
+    const { startContainer, startOffset, endContainer, endOffset } = s.range;
+    const spanOf = (node) => (node.nodeType === 3 ? node.parentElement : node).closest('[data-i]');
+    const startSpan = spanOf(startContainer);
+    if (first < last && startSpan && +startSpan.dataset.i === first && startContainer.nodeType === 3
+      && startOffset === startContainer.length && startContainer === startSpan.lastChild) first++;
+    const endSpan = spanOf(endContainer);
+    if (last > first && endSpan && +endSpan.dataset.i === last && endOffset === 0) last--;
+    return { first, last };
+  }
+
+  function updateSelBar() {
+    const s = currentSelection();
+    const text = s ? s.range.toString().trim() : '';
+    if (!s || !text) { selBar.hidden = true; return; }
+    if (playing) pause();
+    $('selDefine').hidden = /\s/.test(text);
+    selBar.hidden = false;
+    // Sit just below the selection (phones show their own menu above it).
+    const r = s.range.getBoundingClientRect();
+    const bw = selBar.offsetWidth;
+    const bh = selBar.offsetHeight;
+    let top = r.bottom + 10;
+    if (top + bh > window.innerHeight - 8) top = Math.max(8, r.top - bh - 10);
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - bw / 2), window.innerWidth - bw - 8);
+    selBar.style.top = `${top}px`;
+    selBar.style.left = `${left}px`;
+  }
+
+  document.addEventListener('selectionchange', () => {
+    clearTimeout(selTimer);
+    selTimer = setTimeout(updateSelBar, 120);
+  });
+  $('pacerStage').addEventListener('scroll', () => { if (!selBar.hidden) updateSelBar(); }, { passive: true });
+
+  $('selDefine').addEventListener('click', () => {
+    const s = currentSelection();
+    const w = s && selectedWordRange(s);
+    if (!w) return;
+    selBar.hidden = true;
+    lookUp(w.first);
+  });
+  $('selShare').addEventListener('click', () => {
+    const s = currentSelection();
+    const w = s && selectedWordRange(s);
+    if (w) openShare(w.first, w.last);
+  });
+
+  // ---------- Sharing a quote ----------
+
+  const shareSheet = $('shareSheet');
+  let shareQuote = '';
+
+  function quoteText(first, last) {
+    const end = Math.min(last, first + MAX_QUOTE_WORDS - 1);
+    let out = '';
+    for (let i = first; i <= end; i++) {
+      out += book.words[i];
+      if (i < end) out += book.paraEnd[i] ? '\n\n' : ' ';
+    }
+    return { text: end < last ? `${out}…` : out, cut: end < last };
+  }
+
+  function shareMessage() {
+    const caption = $('shareCaption').value.trim();
+    const source = $('shareSourceToggle').checked ? `\n— ${book.title}${book.author ? `, ${book.author}` : ''}` : '';
+    return `${caption ? `${caption}\n\n` : ''}“${shareQuote}”${source}`;
+  }
+
+  function renderSharePreview() {
+    $('shareSource').hidden = !$('shareSourceToggle').checked;
+  }
+
+  function openShare(first, last) {
+    selBar.hidden = true;
+    const q = quoteText(first, last);
+    shareQuote = q.text;
+    $('shareQuote').textContent = shareQuote;
+    $('shareSource').textContent = `— ${book.title}${book.author ? `, ${book.author}` : ''}`;
+    $('shareNote').textContent = q.cut ? `Long passages are trimmed to the first ${MAX_QUOTE_WORDS} words.` : '';
+    $('shareCaption').value = '';
+    renderSharePreview();
+    shareSheet.showModal();
+  }
+
+  const finishShare = () => {
+    shareSheet.close();
+    getSelection().removeAllRanges();
+  };
+
+  $('shareSourceToggle').addEventListener('change', renderSharePreview);
+  $('shareWhatsApp').addEventListener('click', () => {
+    // wa.me opens the WhatsApp app on phones (WhatsApp Web on computers) with
+    // the message filled in, ready to pick who to send it to.
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage())}`, '_blank', 'noopener');
+    finishShare();
+  });
+  if (navigator.share) {
+    $('shareOther').addEventListener('click', async () => {
+      try {
+        await navigator.share({ text: shareMessage() });
+        finishShare();
+      } catch { /* cancelled */ }
+    });
+  } else {
+    $('shareOther').hidden = true;
+  }
+  $('shareCopy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(shareMessage());
+      finishShare();
+      showStatus('Quote copied. Paste it anywhere.', false, 3000);
+    } catch {
+      showStatus('Couldn’t copy on this browser.', true, 4000);
+    }
+  });
+  shareSheet.addEventListener('click', (e) => { if (e.target === shareSheet) shareSheet.close(); });
 
   const defPop = $('defPop');
   let lookupId = 0;
@@ -1017,7 +1138,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
