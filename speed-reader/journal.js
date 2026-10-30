@@ -211,7 +211,7 @@ const Journal = (() => {
       els.change.classList.toggle('up', p.change.wpm > 0);
     } else {
       els.change.textContent = '–';
-      els.changeWhen.textContent = 'after your first week';
+      els.changeWhen.textContent = 'shows after a week of reading';
       els.change.classList.remove('up');
     }
 

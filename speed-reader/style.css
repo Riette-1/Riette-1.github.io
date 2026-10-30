@@ -249,6 +249,20 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
 .pacer-demo span { background: var(--highlight); color: var(--highlight-text); border-radius: 4px; padding: 0 3px; }
 .timing-demo span { color: var(--accent); font-weight: 700; padding: 0 .3em 0 0; }
 
+.credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 40px 0 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+}
+.credit strong { color: var(--text); font-weight: 600; }
+.credit-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--grad); color: var(--accent-text); }
+
 /* ---------- Nightstand ---------- */
 
 .nightstand { margin: 8px 0 20px; }
