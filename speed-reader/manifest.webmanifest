@@ -1,12 +1,16 @@
 {
+  "id": "./",
   "name": "Nook",
   "short_name": "Nook",
   "description": "Read faster, from your favourite corner.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f6f3ff",
   "theme_color": "#7c3aed",
+  "categories": ["books", "education", "productivity"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },

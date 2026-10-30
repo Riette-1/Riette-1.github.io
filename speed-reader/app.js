@@ -1065,7 +1065,7 @@
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
-  $('openSettings').addEventListener('click', () => { renderDataStatus(); dialog.showModal(); });
+  $('openSettings').addEventListener('click', () => { renderDataStatus(); renderOfflineStatus(); dialog.showModal(); });
 
   // ---------- Your data: protection from clean-up, backups ----------
 
@@ -1094,6 +1094,65 @@
       ? 'You’re using Nook from your Home Screen, which keeps its own data, separate from Safari. Use a backup to move your reading between them.'
       : 'On iPhone, Nook in Safari and Nook on your Home Screen keep separate data. Use a backup to move your reading between them.';
   }
+
+  // ---------- Offline and installing as an app ----------
+
+  async function offlineReady() {
+    if (!('serviceWorker' in navigator) || !window.caches) return false;
+    const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+    return !!(reg && reg.active) && !!(await caches.match(new URL('./', location.href).href).catch(() => null));
+  }
+
+  async function renderOfflineStatus() {
+    $('offlineStatus').textContent = (await offlineReady())
+      ? '✓ Works offline: Nook and your books open without internet. Looking up words still needs a connection.'
+      : 'Offline use is being set up. Open Nook once with internet and it’ll work offline after that.';
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Offline support unavailable', err));
+    });
+  }
+  window.addEventListener('offline', () => showStatus('You’re offline. Nook keeps working; looking up words needs internet.', false, 5000));
+
+  // Chrome, Edge and Android offer an install prompt; iPhone needs Safari's
+  // Share menu, so show the steps there instead.
+  let installPrompt = null;
+  const DISMISS_DAYS = 30;
+  const installDismissed = () => Date.now() - (settings.installDismissedAt || 0) < DISMISS_DAYS * 86400000;
+
+  function renderInstallCard() {
+    const ios = isIOS && !fromHomeScreen && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+    const show = !fromHomeScreen && !installDismissed() && (!!installPrompt || ios);
+    $('installCard').hidden = !show;
+    $('installBtn').hidden = !installPrompt;
+    $('installSteps').hidden = !ios || !!installPrompt;
+    $('installText').textContent = ios
+      ? 'Add Nook to your Home Screen. It opens full-screen like an app, works without internet, and keeps your reading safe from Safari’s clean-up.'
+      : 'Install Nook on this device. It opens in its own window from your home screen or desktop and works without internet.';
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    renderInstallCard();
+  });
+  $('installBtn').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const choice = await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    renderInstallCard();
+    if (choice && choice.outcome === 'accepted') showStatus('Nook is installed. Find it with your other apps.', false, 5000);
+  });
+  $('installDismiss').addEventListener('click', () => {
+    settings.installDismissedAt = Date.now();
+    saveSettings();
+    renderInstallCard();
+  });
+  window.addEventListener('appinstalled', () => { installPrompt = null; renderInstallCard(); });
+  renderInstallCard();
 
   $('protectData').addEventListener('click', async () => {
     const ok = await navigator.storage.persist().catch(() => false);

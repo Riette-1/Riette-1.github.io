@@ -11,18 +11,21 @@
   <meta name="application-name" content="Nook" />
   <meta name="apple-mobile-web-app-title" content="Nook" />
   <meta name="theme-color" content="#7c3aed" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=17" />
-  <script src="epub.js?v=17" defer></script>
-  <script src="library.js?v=17" defer></script>
-  <script src="journal.js?v=17" defer></script>
-  <script src="dictionary.js?v=17" defer></script>
-  <script src="storytime.js?v=17" defer></script>
-  <script src="backup.js?v=17" defer></script>
-  <script src="app.js?v=17" defer></script>
+  <link rel="stylesheet" href="style.css?v=18" />
+  <script src="epub.js?v=18" defer></script>
+  <script src="library.js?v=18" defer></script>
+  <script src="journal.js?v=18" defer></script>
+  <script src="dictionary.js?v=18" defer></script>
+  <script src="storytime.js?v=18" defer></script>
+  <script src="backup.js?v=18" defer></script>
+  <script src="app.js?v=18" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -157,6 +160,22 @@
         <h2>Smart timing</h2>
         <p>Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.</p>
       </article>
+    </section>
+
+    <section class="install-card" id="installCard" hidden aria-labelledby="installTitle">
+      <img class="install-icon" src="icons/icon-192.png" alt="" width="64" height="64" />
+      <div class="install-body">
+        <h2 id="installTitle">Get the Nook app</h2>
+        <p id="installText">Install Nook on this device. It opens full-screen from your home screen and works without internet.</p>
+        <ol class="install-steps" id="installSteps" hidden>
+          <li>Tap the <strong>Share</strong> button <svg class="ic" width="16" height="16" aria-label="Share"><use href="#i-share"/></svg> in Safari’s toolbar.</li>
+          <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
+        </ol>
+        <div class="install-actions">
+          <button type="button" class="btn primary" id="installBtn" hidden>Install Nook</button>
+          <button type="button" class="btn link" id="installDismiss">Not now</button>
+        </div>
+      </div>
     </section>
 
     <footer class="credit">
@@ -384,6 +403,7 @@
         <p class="settings-note"><strong>Saved on this device.</strong> Your bookshelf, bookmarks, reading journal, pace history and settings stay in this browser between visits.</p>
         <p class="settings-note" id="dataStatus"></p>
         <p class="settings-note warn" id="dataWhere" hidden></p>
+        <p class="settings-note" id="offlineStatus"></p>
         <div class="data-actions">
           <button type="button" class="btn secondary" id="protectData" hidden>Protect my data</button>
           <button type="button" class="btn secondary" id="backupData">Download a backup</button>
