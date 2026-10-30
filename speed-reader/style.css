@@ -250,6 +250,25 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
 .pacer-demo span { background: var(--highlight); color: var(--highlight-text); border-radius: 4px; padding: 0 3px; }
 .timing-demo span { color: var(--accent); font-weight: 700; padding: 0 .3em 0 0; }
 
+.install-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  margin: 32px 0 0;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+.install-icon { flex: none; width: 64px; height: 64px; border-radius: 16px; }
+.install-body { flex: 1; min-width: 0; }
+.install-body h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.install-body p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.install-steps { margin: 0 0 10px; padding-left: 20px; font-size: 14px; line-height: 1.6; }
+.install-steps .ic { width: 16px; height: 16px; vertical-align: -3px; color: var(--accent); }
+.install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
 .credit {
   display: flex;
   align-items: center;
