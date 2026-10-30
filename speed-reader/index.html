@@ -6,9 +6,12 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css?v=6" />
-  <script src="epub.js?v=6" defer></script>
-  <script src="app.js?v=6" defer></script>
+  <link rel="stylesheet" href="style.css?v=7" />
+  <script src="epub.js?v=7" defer></script>
+  <script src="library.js?v=7" defer></script>
+  <script src="journal.js?v=7" defer></script>
+  <script src="dictionary.js?v=7" defer></script>
+  <script src="app.js?v=7" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -49,7 +52,7 @@
       <p class="greeting-sub">Your book is right where you left it.</p>
       <div class="ns-card">
         <div class="ns-cover" aria-hidden="true">
-          <div class="ns-fallback"><span id="nsFallbackTitle"></span></div>
+          <div class="ns-fallback" id="nsFallback"><span id="nsFallbackTitle"></span></div>
           <img id="nsCover" alt="" hidden />
         </div>
         <div class="ns-body">
@@ -60,23 +63,54 @@
           <p class="ns-where" id="nsWhere"></p>
           <div class="ns-actions">
             <button class="btn primary big" id="nsContinue"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="nsContinueLabel">Open to my bookmark</span></button>
-            <button class="btn link" id="nsRemove">Put it back on the shelf</button>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="hero">
+    <section class="hero" id="hero">
       <div class="dropzone" id="dropzone">
         <div class="hero-icon"><svg width="34" height="34"><use href="#i-bolt"/></svg></div>
-        <h1 id="shelfTitle">Welcome to your reading nook</h1>
-        <p id="shelfText">Pull a book off the shelf to get started. Your <strong>.epub</strong> books stay on this device and are never uploaded.</p>
-        <label class="btn primary big" id="shelfButton" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg><span id="shelfButtonLabel">Pick a book from the shelf</span></label>
+        <h1>Welcome to your reading nook</h1>
+        <p>Your bookshelf is empty. Add an <strong>.epub</strong> to get started. Books stay on this device and are never uploaded.</p>
+        <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg>Put a book on the shelf</label>
         <p class="hint">or drop an EPUB here</p>
-        <p class="status" id="loadStatus" role="status"></p>
       </div>
     </section>
-    <section class="techniques">
+
+    <section class="shelf" id="shelf" hidden aria-labelledby="shelfHeading">
+      <div class="section-head">
+        <h2 id="shelfHeading">Your bookshelf</h2>
+        <span class="section-note" id="shelfCount"></span>
+      </div>
+      <div class="shelf-grid" id="shelfGrid" role="list"></div>
+      <p class="section-foot">Drop an EPUB anywhere on this page to add it.</p>
+    </section>
+
+    <section class="journal" id="journal" hidden aria-labelledby="journalHeading">
+      <div class="section-head">
+        <h2 id="journalHeading">Reading journal</h2>
+        <span class="section-note">Time counted while a book is playing</span>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="tile-value" id="jToday">0 min</span><span class="tile-label">read today</span></div>
+        <div class="tile"><span class="tile-value" id="jStreak">0</span><span class="tile-label">day streak</span></div>
+        <div class="tile"><span class="tile-value" id="jWeek">0 min</span><span class="tile-label">read this week</span></div>
+        <div class="tile"><span class="tile-value" id="jPace">–</span><span class="tile-label">real pace, wpm</span></div>
+        <div class="tile"><span class="tile-value" id="jFinished">0</span><span class="tile-label" id="jFinishedLabel">books finished</span></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Minutes read · last 14 days</div>
+        <div class="chart">
+          <span class="chart-max" id="jMax"></span>
+          <div class="bars" id="jBars" role="list" aria-label="Minutes read per day, last 14 days"></div>
+          <p class="chart-empty" id="jEmpty">Press play on a book and your reading time will be written here.</p>
+          <div class="chart-tip" id="jTip" hidden></div>
+        </div>
+        <div class="bar-axis" id="jAxis" aria-hidden="true"></div>
+      </div>
+    </section>
+    <section class="techniques" id="techniques">
       <article>
         <div class="demo flash-demo">re<span>a</span>ding</div>
         <h2>Flash</h2>
@@ -113,7 +147,7 @@
         <div class="guide bottom"></div>
       </div>
       <p class="context" id="rsvpContext"></p>
-      <p class="tap-hint" id="tapHint">Tap to play</p>
+      <p class="tap-hint" id="tapHint">Tap to play · hold a word below to look it up</p>
     </div>
 
     <div id="pacerStage" class="stage pacer" hidden>
@@ -149,6 +183,17 @@
       </div>
     </footer>
   </main>
+
+  <div class="def-pop" id="defPop" role="dialog" aria-labelledby="defWord" hidden>
+    <div class="def-head">
+      <div><h3 id="defWord"></h3><span class="def-phon" id="defPhon"></span></div>
+      <button class="btn round sm ghost" id="defClose" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="def-body" id="defBody"></div>
+    <p class="def-src">From the <a href="https://dictionaryapi.dev/" target="_blank" rel="noopener">Free Dictionary</a> · <a id="defMore" target="_blank" rel="noopener">More on Wiktionary</a></p>
+  </div>
+
+  <p class="toast" id="loadStatus" role="status"></p>
 
   <dialog id="settings" class="sheet" aria-labelledby="settingsTitle">
     <form method="dialog">
@@ -205,8 +250,9 @@
           <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next chapter</dd>
           <dt><kbd>M</kbd></dt><dd>Switch Flash / Pacer</dd>
+          <dt><kbd>D</kbd></dt><dd>Look up the current word</dd>
         </dl>
-        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it.</p>
+        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it. Press and hold (or double-click) a word to see what it means.</p>
       </section>
     </form>
   </dialog>
