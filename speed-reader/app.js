@@ -13,7 +13,7 @@
   const settings = Object.assign(
     {
       wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '',
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1,
     },
     store.get('sr:settings', {}),
   );
@@ -35,7 +35,7 @@
   let rampStep = 0;
   let pacerChapter = -1;
   let pacerSpans = [];
-  let pacerCur = null;
+  let pacerCurs = [];
   let lastSaved = 0;
   let lastChapter = -1;
 
@@ -591,14 +591,20 @@
 
   // ---------- Playback ----------
 
-  function stepSize() {
-    return settings.mode === 'rsvp' ? settings.chunk : 1;
+  // How many words to show or highlight at once from position i. A Pacer
+  // group stops at the end of a paragraph so it never straddles two.
+  function stepSize(i = pos) {
+    if (settings.mode === 'rsvp') return settings.chunk;
+    if (settings.mode !== 'pacer') return 1;
+    const n = Math.min(settings.pacerChunk, book.words.length - i);
+    for (let k = 0; k < n - 1; k++) if (book.paraEnd[i + k]) return k + 1;
+    return n;
   }
 
   function step() {
     if (!playing) return;
     if (pos >= book.words.length) { pos = book.words.length - 1; pause(); return; }
-    const n = Math.min(stepSize(), book.words.length - pos);
+    const n = Math.min(stepSize(pos), book.words.length - pos);
     render();
     let d = 0;
     for (let k = 0; k < n; k++) d += wordDelay(pos + k);
@@ -869,7 +875,7 @@
     if (p.childNodes.length) frag.append(p);
     host.replaceChildren(frag);
     pacerChapter = ci;
-    pacerCur = null;
+    pacerCurs = [];
     chunkSpans = [];
     markChunk();
     $('pacerStage').scrollTo({ top: 0, behavior: 'instant' });
@@ -882,7 +888,7 @@
 
   function renderPage(ci) {
     if (ci !== pacerChapter) buildPacer(ci);
-    if (pacerCur) { pacerCur.classList.remove('cur'); pacerCur = null; }
+    clearPacerHighlight();
     if (!pageScrollPending) return;
     pageScrollPending = false;
     const span = pacerSpans[pos - book.chapters[ci].start];
@@ -934,13 +940,27 @@
     stage.scrollBy({ top: dir * stage.clientHeight * 0.85, behavior: 'smooth' });
   }
 
+  function clearPacerHighlight() {
+    for (const sp of pacerCurs) sp.classList.remove('cur', 'cur-join');
+    pacerCurs = [];
+  }
+
   function renderPacer(ci) {
     if (ci !== pacerChapter) buildPacer(ci);
-    const span = pacerSpans[pos - book.chapters[ci].start];
-    if (pacerCur) pacerCur.classList.remove('cur');
-    pacerCur = span;
+    clearPacerHighlight();
+    const base = book.chapters[ci].start;
+    const n = Math.min(stepSize(pos), book.chapters[ci].end - pos);
+    for (let k = 0; k < n; k++) {
+      const sp = pacerSpans[pos - base + k];
+      if (!sp) break;
+      sp.classList.add('cur');
+      // Every word but the last reaches across the following space, so the
+      // group reads as one block.
+      if (k < n - 1) sp.classList.add('cur-join');
+      pacerCurs.push(sp);
+    }
+    const span = pacerCurs[0];
     if (!span) return;
-    span.classList.add('cur');
 
     const stage = $('pacerStage');
     const sr = stage.getBoundingClientRect();
@@ -1025,6 +1045,7 @@
     }
   };
   radios('chunk', settings.chunk, (v) => { settings.chunk = +v; saveSettings(); render(); });
+  radios('pacerChunk', settings.pacerChunk, (v) => { settings.pacerChunk = +v; saveSettings(); render(); });
   radios('theme', settings.theme, (v) => { settings.theme = v; saveSettings(); applyAppearance(); });
 
   $('fontSize').value = settings.fontSize;
@@ -1044,7 +1065,68 @@
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
-  $('openSettings').addEventListener('click', () => dialog.showModal());
+  $('openSettings').addEventListener('click', () => { renderDataStatus(); dialog.showModal(); });
+
+  // ---------- Your data: protection from clean-up, backups ----------
+
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const fromHomeScreen = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+
+  async function renderDataStatus() {
+    const st = navigator.storage;
+    const persisted = st && st.persisted ? await st.persisted().catch(() => null) : null;
+    let used = '';
+    if (st && st.estimate) {
+      const est = await st.estimate().catch(() => null);
+      if (est && est.usage) used = ` Using ${est.usage < 1e6 ? `${Math.max(1, Math.round(est.usage / 1e3))} KB` : `${(est.usage / 1e6).toFixed(1)} MB`}.`;
+    }
+    if (persisted) {
+      $('dataStatus').textContent = `✓ Protected: this browser won’t clear Nook’s data by itself.${used}`;
+    } else if (isIOS && !fromHomeScreen) {
+      $('dataStatus').textContent = `Safari may clear it if you don’t visit for 7 days. Add Nook to your Home Screen to keep it safe, or keep a backup.${used}`;
+    } else {
+      $('dataStatus').textContent = `Not protected yet: the browser could clear it if your device runs low on space.${used}`;
+    }
+    $('protectData').hidden = !!persisted || !(st && st.persist);
+    // On iPhone, Safari and the Home Screen app each keep their own data.
+    $('dataWhere').hidden = !isIOS;
+    $('dataWhere').textContent = fromHomeScreen
+      ? 'You’re using Nook from your Home Screen, which keeps its own data, separate from Safari. Use a backup to move your reading between them.'
+      : 'On iPhone, Nook in Safari and Nook on your Home Screen keep separate data. Use a backup to move your reading between them.';
+  }
+
+  $('protectData').addEventListener('click', async () => {
+    const ok = await navigator.storage.persist().catch(() => false);
+    showStatus(ok ? 'Done. Your reading data is protected.' : 'Your browser didn’t allow it. Keeping a backup is the safest option.', !ok, 5000);
+    renderDataStatus();
+  });
+
+  $('backupData').addEventListener('click', async () => {
+    Journal.flush(playing);
+    savePos(true);
+    try {
+      const how = await Backup.save();
+      if (how !== 'cancelled') showStatus('Backup saved. Keep it somewhere safe, like Files or your email.', false, 5000);
+    } catch (err) {
+      console.error(err);
+      showStatus('The backup couldn’t be saved on this browser.', true, 5000);
+    }
+  });
+
+  $('restoreFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!confirm('Restore this backup? It’s combined with what’s already here, so nothing on this device is lost.')) return;
+    try {
+      const r = await Backup.restore(file);
+      const n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
+      showStatus(`Restored ${n(r.days, 'day', 'days')} of reading and ${n(r.bookmarks, 'bookmark', 'bookmarks')}.`, false, 4000);
+      setTimeout(() => location.reload(), 1200);
+    } catch (err) {
+      showStatus(err.message || 'That backup couldn’t be read.', true, 5000);
+    }
+  });
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
 
   // ---------- Keep the screen awake ----------
@@ -1380,7 +1462,8 @@
     // The browser drops the wake lock when the page is hidden; take it again on return.
     else keepAwake();
   });
-  window.addEventListener('pagehide', () => { Journal.flush(playing); savePos(true); });
+  window.addEventListener('pagehide', () => { Journal.flush(false); savePos(true); });
+  window.addEventListener('pageshow', (e) => { if (e.persisted && playing && settings.mode !== 'story') Journal.start(); });
 
   setWpm(settings.wpm);
   applyAppearance();

@@ -807,6 +807,9 @@ body.playing .tap-hint { opacity: 0; }
 .pacer-text p { margin: 0 0 1em; }
 .pacer-text span { cursor: pointer; border-radius: 4px; }
 .pacer-text .cur { color: var(--highlight-text); background: var(--highlight); box-shadow: 0 0 0 3px var(--highlight); }
+.pacer-text .cur-join { border-radius: 4px 0 0 4px; box-shadow: 0 0 0 3px var(--highlight), 0.3em 0 0 3px var(--highlight); }
+.pacer-text .cur-join + .cur { border-radius: 0 4px 4px 0; }
+.pacer-text .cur-join + .cur-join { border-radius: 0; }
 .pacer-text b { font-weight: 700; }
 
 /* ---------- Dock ---------- */
@@ -970,6 +973,7 @@ body.mode-page #play { display: none; }
 
 .settings-note { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--muted); }
 .settings-note strong { color: var(--text); }
+.data-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
 .settings-note.warn { color: var(--text); background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; }
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 14px; }
 .shortcuts dt { white-space: nowrap; }
