@@ -81,6 +81,7 @@
     computeTiming();
 
     $('bookTitle').textContent = book.title;
+    fillVoices();
     const sel = $('chapterSelect');
     sel.innerHTML = '';
     book.chapters.forEach((c, i) => sel.add(new Option(c.title, i)));
@@ -697,6 +698,7 @@
       isBreak,
       from: pos,
       voiceURI: settings.voiceURI,
+      lang: book.language,
       rate: settings.storyRate,
       onChunk: (start, end) => {
         storyChunk = [start, end];
@@ -729,23 +731,43 @@
     if (playing && settings.mode === 'story') tell();
   }
 
+  // Just the few best voices for the book's language, most natural first.
   function fillVoices() {
     const sel = $('storyVoice');
-    const list = Storytime.voices();
+    const lang = book && book.language;
     sel.replaceChildren();
-    if (!Storytime.supported || !list.length) {
+    if (!Storytime.supported || !Storytime.voices().length) {
       sel.add(new Option(Storytime.supported ? 'Default voice' : 'No voices on this browser', ''));
       sel.disabled = !Storytime.supported;
       return;
     }
     sel.disabled = false;
-    // The reader's own language first, then the rest alphabetically.
-    const lang = (navigator.language || 'en').slice(0, 2);
-    const sorted = [...list].sort((a, b) => (b.lang.startsWith(lang) - a.lang.startsWith(lang)) || a.name.localeCompare(b.name));
-    for (const v of sorted) sel.add(new Option(`${v.name} (${v.lang})`, v.voiceURI));
-    const chosen = Storytime.pickVoice(settings.voiceURI);
+    const list = Storytime.shortlist(lang);
+    const chosen = Storytime.pickVoice(settings.voiceURI, lang);
+    if (chosen && !list.includes(chosen)) list.push(chosen);
+    for (const v of list) sel.add(new Option(Storytime.describe(v), v.voiceURI));
     if (chosen) sel.value = chosen.voiceURI;
+    $('voiceTip').hidden = list.some(Storytime.isNatural);
   }
+
+  // Natural voices are often a free download away in the device's settings.
+  function voiceHelp() {
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      return 'On iPhone or iPad: Settings → Accessibility → Spoken Content → Voices → English. Download a voice marked “Enhanced” or “Premium”, such as Ava or Zoe, then pick it here.';
+    }
+    if (/Android/.test(ua)) {
+      return 'On Android: Settings → search “Text-to-speech” → Google Speech Services → Install voice data. Choose your language and download the high-quality voice, then reopen Nook.';
+    }
+    if (/Macintosh/.test(ua)) {
+      return 'On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage Voices. Download an “Enhanced” or “Premium” voice. Microsoft Edge also has very natural online voices built in.';
+    }
+    if (/Windows/.test(ua)) {
+      return 'On Windows, Microsoft Edge has very natural online voices built in (look for “Natural” in the list). In Chrome, the Google voices are the smoothest.';
+    }
+    return 'Your device’s settings may offer higher-quality voices to download. Voices marked “Natural” sound the most human.';
+  }
+  $('voiceHelp').textContent = voiceHelp();
 
   $('storySlower').addEventListener('click', () => setStoryRate(settings.storyRate - 0.1));
   $('storyFaster').addEventListener('click', () => setStoryRate(settings.storyRate + 0.1));
@@ -958,6 +980,11 @@
     saveSettings();
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
+    if (mode === 'story' && !$('voiceTip').hidden && !settings.voiceTipShown) {
+      settings.voiceTipShown = true;
+      saveSettings();
+      showStatus('Tip: for a more natural voice, see Settings → Storytime.', false, 6000);
+    }
     $('rsvpStage').hidden = mode !== 'rsvp';
     $('pacerStage').hidden = mode === 'rsvp';
     const [back, fwd] = BACK_LABELS[mode === 'page' ? 'page' : 'other'];
