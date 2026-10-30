@@ -15,13 +15,14 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=16" />
-  <script src="epub.js?v=16" defer></script>
-  <script src="library.js?v=16" defer></script>
-  <script src="journal.js?v=16" defer></script>
-  <script src="dictionary.js?v=16" defer></script>
-  <script src="storytime.js?v=16" defer></script>
-  <script src="app.js?v=16" defer></script>
+  <link rel="stylesheet" href="style.css?v=17" />
+  <script src="epub.js?v=17" defer></script>
+  <script src="library.js?v=17" defer></script>
+  <script src="journal.js?v=17" defer></script>
+  <script src="dictionary.js?v=17" defer></script>
+  <script src="storytime.js?v=17" defer></script>
+  <script src="backup.js?v=17" defer></script>
+  <script src="app.js?v=17" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -376,6 +377,20 @@
       <section>
         <h3>Screen</h3>
         <label class="toggle"><span><strong>Keep screen on</strong><small id="awakeNote">Stops the screen dimming while you read. Turns off after 5 minutes paused.</small></span><input type="checkbox" id="keepAwake" /></label>
+      </section>
+
+      <section>
+        <h3>Your data</h3>
+        <p class="settings-note"><strong>Saved on this device.</strong> Your bookshelf, bookmarks, reading journal, pace history and settings stay in this browser between visits.</p>
+        <p class="settings-note" id="dataStatus"></p>
+        <p class="settings-note warn" id="dataWhere" hidden></p>
+        <div class="data-actions">
+          <button type="button" class="btn secondary" id="protectData" hidden>Protect my data</button>
+          <button type="button" class="btn secondary" id="backupData">Download a backup</button>
+          <label class="btn ghost" for="restoreFile">Restore from a backup</label>
+          <input type="file" id="restoreFile" accept="application/json,.json" hidden />
+        </div>
+        <p class="settings-note">A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.</p>
       </section>
 
       <section class="shortcuts">

@@ -973,6 +973,7 @@ body.mode-page #play { display: none; }
 
 .settings-note { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--muted); }
 .settings-note strong { color: var(--text); }
+.data-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
 .settings-note.warn { color: var(--text); background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; }
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 14px; }
 .shortcuts dt { white-space: nowrap; }
