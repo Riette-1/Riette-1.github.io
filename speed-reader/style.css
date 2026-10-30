@@ -807,6 +807,9 @@ body.playing .tap-hint { opacity: 0; }
 .pacer-text p { margin: 0 0 1em; }
 .pacer-text span { cursor: pointer; border-radius: 4px; }
 .pacer-text .cur { color: var(--highlight-text); background: var(--highlight); box-shadow: 0 0 0 3px var(--highlight); }
+.pacer-text .cur-join { border-radius: 4px 0 0 4px; box-shadow: 0 0 0 3px var(--highlight), 0.3em 0 0 3px var(--highlight); }
+.pacer-text .cur-join + .cur { border-radius: 0 4px 4px 0; }
+.pacer-text .cur-join + .cur-join { border-radius: 0; }
 .pacer-text b { font-weight: 700; }
 
 /* ---------- Dock ---------- */

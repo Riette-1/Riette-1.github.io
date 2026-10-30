@@ -13,7 +13,7 @@
   const settings = Object.assign(
     {
       wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '',
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1,
     },
     store.get('sr:settings', {}),
   );
@@ -35,7 +35,7 @@
   let rampStep = 0;
   let pacerChapter = -1;
   let pacerSpans = [];
-  let pacerCur = null;
+  let pacerCurs = [];
   let lastSaved = 0;
   let lastChapter = -1;
 
@@ -591,14 +591,20 @@
 
   // ---------- Playback ----------
 
-  function stepSize() {
-    return settings.mode === 'rsvp' ? settings.chunk : 1;
+  // How many words to show or highlight at once from position i. A Pacer
+  // group stops at the end of a paragraph so it never straddles two.
+  function stepSize(i = pos) {
+    if (settings.mode === 'rsvp') return settings.chunk;
+    if (settings.mode !== 'pacer') return 1;
+    const n = Math.min(settings.pacerChunk, book.words.length - i);
+    for (let k = 0; k < n - 1; k++) if (book.paraEnd[i + k]) return k + 1;
+    return n;
   }
 
   function step() {
     if (!playing) return;
     if (pos >= book.words.length) { pos = book.words.length - 1; pause(); return; }
-    const n = Math.min(stepSize(), book.words.length - pos);
+    const n = Math.min(stepSize(pos), book.words.length - pos);
     render();
     let d = 0;
     for (let k = 0; k < n; k++) d += wordDelay(pos + k);
@@ -869,7 +875,7 @@
     if (p.childNodes.length) frag.append(p);
     host.replaceChildren(frag);
     pacerChapter = ci;
-    pacerCur = null;
+    pacerCurs = [];
     chunkSpans = [];
     markChunk();
     $('pacerStage').scrollTo({ top: 0, behavior: 'instant' });
@@ -882,7 +888,7 @@
 
   function renderPage(ci) {
     if (ci !== pacerChapter) buildPacer(ci);
-    if (pacerCur) { pacerCur.classList.remove('cur'); pacerCur = null; }
+    clearPacerHighlight();
     if (!pageScrollPending) return;
     pageScrollPending = false;
     const span = pacerSpans[pos - book.chapters[ci].start];
@@ -934,13 +940,27 @@
     stage.scrollBy({ top: dir * stage.clientHeight * 0.85, behavior: 'smooth' });
   }
 
+  function clearPacerHighlight() {
+    for (const sp of pacerCurs) sp.classList.remove('cur', 'cur-join');
+    pacerCurs = [];
+  }
+
   function renderPacer(ci) {
     if (ci !== pacerChapter) buildPacer(ci);
-    const span = pacerSpans[pos - book.chapters[ci].start];
-    if (pacerCur) pacerCur.classList.remove('cur');
-    pacerCur = span;
+    clearPacerHighlight();
+    const base = book.chapters[ci].start;
+    const n = Math.min(stepSize(pos), book.chapters[ci].end - pos);
+    for (let k = 0; k < n; k++) {
+      const sp = pacerSpans[pos - base + k];
+      if (!sp) break;
+      sp.classList.add('cur');
+      // Every word but the last reaches across the following space, so the
+      // group reads as one block.
+      if (k < n - 1) sp.classList.add('cur-join');
+      pacerCurs.push(sp);
+    }
+    const span = pacerCurs[0];
     if (!span) return;
-    span.classList.add('cur');
 
     const stage = $('pacerStage');
     const sr = stage.getBoundingClientRect();
@@ -1025,6 +1045,7 @@
     }
   };
   radios('chunk', settings.chunk, (v) => { settings.chunk = +v; saveSettings(); render(); });
+  radios('pacerChunk', settings.pacerChunk, (v) => { settings.pacerChunk = +v; saveSettings(); render(); });
   radios('theme', settings.theme, (v) => { settings.theme = v; saveSettings(); applyAppearance(); });
 
   $('fontSize').value = settings.fontSize;
