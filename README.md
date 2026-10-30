@@ -1,9 +1,11 @@
 # Riette-1.github.io
 Countdown to christmas
 
-## EPUB Speed Reader
+## Nook
 
-[`/speed-reader/`](https://riette-1.github.io/speed-reader/) is a browser-only speed reading app for `.epub` files. Open or drop a book; nothing is uploaded.
+*Read faster, from your favourite corner.* Created by Riëtte.
+
+[Nook](https://riette-1.github.io/nook/) is a browser-only speed reading app for `.epub` files, served from [`/speed-reader/`](https://riette-1.github.io/speed-reader/) (`/nook/` forwards there). Open or drop a book; nothing is uploaded.
 
 - **Flash (RSVP)**: shows one word (or a 2–4 word chunk) at a time at a fixed point, with the optimal recognition point in red.
 - **Pacer**: a highlight moves through the chapter at your target speed, with optional Bionic bolding.

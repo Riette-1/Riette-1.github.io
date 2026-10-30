@@ -230,6 +230,7 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
 .dropzone h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 5vw, 2.4rem); letter-spacing: -0.02em; }
 .dropzone p { margin: 0 auto 20px; max-width: 460px; color: var(--muted); }
 .dropzone .hint { margin: 12px auto 0; font-size: 14px; }
+.dropzone .tagline { margin-top: -2px; margin-bottom: 14px; font-size: 1.1rem; font-weight: 600; color: var(--accent); }
 
 .techniques { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
 .techniques article { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
