@@ -6,12 +6,12 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <title>EPUB Speed Reader</title>
-  <link rel="stylesheet" href="style.css?v=8" />
-  <script src="epub.js?v=8" defer></script>
-  <script src="library.js?v=8" defer></script>
-  <script src="journal.js?v=8" defer></script>
-  <script src="dictionary.js?v=8" defer></script>
-  <script src="app.js?v=8" defer></script>
+  <link rel="stylesheet" href="style.css?v=9" />
+  <script src="epub.js?v=9" defer></script>
+  <script src="library.js?v=9" defer></script>
+  <script src="journal.js?v=9" defer></script>
+  <script src="dictionary.js?v=9" defer></script>
+  <script src="app.js?v=9" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -63,6 +63,7 @@
           <p class="ns-where" id="nsWhere"></p>
           <div class="ns-actions">
             <button class="btn primary big" id="nsContinue"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="nsContinueLabel">Open to my bookmark</span></button>
+            <button class="btn link" id="nsPlan">How long will it take?</button>
           </div>
         </div>
       </div>
@@ -208,6 +209,56 @@
   </div>
 
   <p class="toast" id="loadStatus" role="status"></p>
+
+  <dialog id="bookSheet" class="sheet book-sheet" aria-labelledby="bsTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <p class="eyebrow">From your bookshelf</p>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="bs-top">
+        <div class="sb-cover bs-cover" id="bsCover" aria-hidden="true"></div>
+        <div class="bs-info">
+          <h2 id="bsTitle"></h2>
+          <p class="ns-author" id="bsAuthor"></p>
+          <p class="bs-facts" id="bsFacts"></p>
+          <div class="ns-progress"><div class="ns-bar"><span id="bsBar"></span></div><span id="bsPct"></span></div>
+        </div>
+      </div>
+
+      <section>
+        <h3>How long will it take?</h3>
+        <div class="field">
+          <span class="field-label">At this pace</span>
+          <div class="pace-options" id="bsPaces" role="radiogroup" aria-label="Reading pace"></div>
+          <div class="custom-pace" id="bsCustomRow" hidden>
+            <input type="range" class="range" id="bsCustom" min="100" max="1200" step="25" aria-label="Custom words per minute" />
+            <output id="bsCustomOut"></output>
+          </div>
+        </div>
+        <div class="estimates">
+          <div class="estimate"><span class="est-value" id="bsWhole">–</span><span class="tile-label">the whole book</span></div>
+          <div class="estimate"><span class="est-value" id="bsLeft">–</span><span class="tile-label" id="bsLeftLabel">left to read</span></div>
+        </div>
+        <div class="field">
+          <span class="field-label">Reading a little each day</span>
+          <div class="segmented small" role="radiogroup" aria-label="Minutes a day">
+            <label><input type="radio" name="dailyMinutes" value="10" /><span>10 min</span></label>
+            <label><input type="radio" name="dailyMinutes" value="20" /><span>20</span></label>
+            <label><input type="radio" name="dailyMinutes" value="30" /><span>30</span></label>
+            <label><input type="radio" name="dailyMinutes" value="60" /><span>1 hr</span></label>
+          </div>
+        </div>
+        <p class="plan" id="bsPlan"></p>
+        <p class="pace-note" id="bsNote"></p>
+      </section>
+
+      <div class="bs-actions">
+        <button type="button" class="btn primary big" id="bsOpen"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="bsOpenLabel">Open to my bookmark</span></button>
+        <button type="button" class="btn link" id="bsRemove">Take off the shelf</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="settings" class="sheet" aria-labelledby="settingsTitle">
     <form method="dialog">
