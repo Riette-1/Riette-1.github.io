@@ -33,37 +33,80 @@
     input.style.setProperty('--fill', `${((input.value - input.min) / span) * 100}%`);
   };
 
+  // ---------- Nightstand: the last book, kept on this device ----------
+  // The EPUB file itself lives in IndexedDB (too big for localStorage); the
+  // bookmark summary shown on the card lives in localStorage.
+
+  const nightstand = (() => {
+    let dbp = null;
+    const db = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('speed-reader', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('books');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }));
+    const run = async (mode, fn) => {
+      const d = await db();
+      return new Promise((res, rej) => {
+        const t = d.transaction('books', mode);
+        const req = fn(t.objectStore('books'));
+        t.oncomplete = () => res(req.result);
+        t.onerror = t.onabort = () => rej(t.error);
+      });
+    };
+    return {
+      get: () => run('readonly', (s) => s.get('nightstand')).catch(() => null),
+      put: (rec) => run('readwrite', (s) => s.put(rec, 'nightstand')),
+      clear: () => run('readwrite', (s) => s.delete('nightstand')).catch(() => {}),
+    };
+  })();
+
   // ---------- Loading ----------
 
   const status = $('loadStatus');
 
-  async function openFile(file) {
+  function showStatus(text, isError) {
+    status.classList.toggle('error', !!isError);
+    status.textContent = text;
+  }
+
+  async function loadBook(file, fromNightstand) {
     if (!file) return;
     pause();
-    status.classList.remove('error');
-    status.textContent = `Opening “${file.name}”…`;
+    showStatus(fromNightstand ? 'Finding your bookmark…' : `Taking “${file.name.replace(/\.epub$/i, '')}” off the shelf…`);
+    let loaded;
     try {
-      book = await EPUB.load(file, (f) => { status.textContent = `Reading chapters… ${Math.round(f * 100)}%`; });
+      loaded = await EPUB.load(file, (f) => showStatus(`Turning the pages… ${Math.round(f * 100)}%`));
     } catch (err) {
       console.error(err);
-      status.classList.add('error');
-      status.textContent = err.message || 'Could not read this file.';
-      showWelcome();
+      showStatus(fromNightstand
+        ? 'This book couldn’t be opened any more. Pick it again from your bookshelf.'
+        : err.message || 'Could not read this file.', true);
       return;
     }
-    status.textContent = '';
+    showStatus('');
+    book = loaded;
     bookKey = `sr:pos:${book.title}|${book.author}|${book.words.length}`;
     pos = Math.min(store.get(bookKey, 0), book.words.length - 1);
     pacerChapter = -1;
-
-    $('bookTitle').textContent = book.title;
     lastChapter = -1;
 
+    $('bookTitle').textContent = book.title;
     const sel = $('chapterSelect');
     sel.innerHTML = '';
     book.chapters.forEach((c, i) => sel.add(new Option(c.title, i)));
     $('progress').max = book.words.length - 1;
 
+    if (!fromNightstand) {
+      nightstand.put({ file, cover: book.cover, title: book.title, author: book.author, key: bookKey, savedAt: Date.now() })
+        .then(() => navigator.storage && navigator.storage.persist && navigator.storage.persist())
+        .catch((err) => console.warn('Could not keep the book on the nightstand', err));
+    }
+    savePos(true);
+    showReader();
+  }
+
+  function showReader() {
     $('welcome').hidden = true;
     $('reader').hidden = false;
     document.body.classList.add('reading');
@@ -71,18 +114,81 @@
     keepAwake();
   }
 
-  function showWelcome() {
-    if (book) return;
-    $('welcome').hidden = false;
+  function goHome() {
+    pause();
+    savePos(true);
     $('reader').hidden = true;
+    $('welcome').hidden = false;
+    document.body.classList.remove('reading');
+    releaseAwake();
+    renderHome();
   }
 
-  $('fileInput').addEventListener('change', (e) => { openFile(e.target.files[0]); e.target.value = ''; });
+  let coverUrl = '';
+  let shelved = null;
+
+  async function renderHome() {
+    shelved = await nightstand.get();
+    const has = !!shelved;
+    $('welcome').classList.toggle('has-nightstand', has);
+    $('nightstand').hidden = !has;
+    $('shelfTitle').textContent = has ? 'In the mood for something new?' : 'Welcome to your reading nook';
+    $('shelfText').textContent = has
+      ? 'Pick another book and it will take this one’s place on your nightstand. Every book keeps its own bookmark.'
+      : 'Pull a book off the shelf to get started. Your EPUB books stay on this device and are never uploaded.';
+    $('shelfButtonLabel').textContent = has ? 'Browse the bookshelf' : 'Pick a book from the shelf';
+    $('shelfButton').classList.toggle('primary', !has);
+    $('shelfButton').classList.toggle('secondary', has);
+    if (!has) return;
+
+    const hour = new Date().getHours();
+    $('greeting').textContent = hour < 5 ? 'Up late?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+    $('nsTitle').textContent = shelved.title;
+    $('nsFallbackTitle').textContent = shelved.title;
+    $('nsAuthor').textContent = shelved.author || '';
+    if (coverUrl) URL.revokeObjectURL(coverUrl);
+    coverUrl = shelved.cover ? URL.createObjectURL(shelved.cover) : '';
+    const img = $('nsCover');
+    img.hidden = !coverUrl;
+    if (coverUrl) img.src = coverUrl; else img.removeAttribute('src');
+
+    const mark = store.get('sr:bookmark', null);
+    const ours = mark && mark.key === shelved.key ? mark : null;
+    const pct = ours ? Math.floor((ours.pos / Math.max(1, ours.total - 1)) * 100) : 0;
+    $('nsBar').style.width = `${pct}%`;
+    $('nsPct').textContent = `${pct}%`;
+    const started = ours && ours.pos > 0;
+    $('nsContinueLabel').textContent = started ? 'Open to my bookmark' : 'Start reading';
+    if (!started) {
+      $('nsWhere').textContent = 'Not started yet. The first page is waiting.';
+    } else {
+      const left = ((ours.total - ours.pos) / settings.wpm) * (settings.pauses ? 1.2 : 1);
+      $('nsWhere').textContent = `Bookmarked in ${ours.chapter} · about ${fmtTime(left)} to go at ${settings.wpm} wpm`;
+    }
+  }
+
+  $('nsContinue').addEventListener('click', () => {
+    if (!shelved) return;
+    if (book && bookKey === shelved.key) showReader();
+    else loadBook(shelved.file, true);
+  });
+
+  $('nsRemove').addEventListener('click', async () => {
+    if (!shelved || !confirm(`Put “${shelved.title}” back on the shelf? Your bookmark is kept if you open it again later.`)) return;
+    await nightstand.clear();
+    renderHome();
+  });
+
+  $('goHome').addEventListener('click', goHome);
+  $('brand').addEventListener('click', () => { if (book && !$('reader').hidden) goHome(); });
+
+  $('fileInput').addEventListener('change', (e) => { loadBook(e.target.files[0], false); e.target.value = ''; });
 
   const dz = $('dropzone');
   ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); dz.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
-  document.addEventListener('drop', (e) => openFile(e.dataTransfer.files[0]));
+  document.addEventListener('drop', (e) => loadBook(e.dataTransfer.files[0], false));
 
   // ---------- Text helpers ----------
 
@@ -202,7 +308,11 @@
   function savePos(force) {
     if (!book) return;
     const now = Date.now();
-    if (force || now - lastSaved > 3000) { store.set(bookKey, pos); lastSaved = now; }
+    if (force || now - lastSaved > 3000) {
+      store.set(bookKey, pos);
+      store.set('sr:bookmark', { key: bookKey, pos, total: book.words.length, chapter: book.chapters[chapterAt(pos)].title });
+      lastSaved = now;
+    }
   }
 
   // ---------- Rendering ----------
@@ -400,7 +510,7 @@
 
   async function keepAwake() {
     clearTimeout(idleTimer);
-    if (!book || !settings.keepAwake || !wakeSupported || document.hidden) {
+    if (!book || $('reader').hidden || !settings.keepAwake || !wakeSupported || document.hidden) {
       releaseAwake();
       return;
     }
@@ -412,7 +522,7 @@
       lock.addEventListener('release', () => { if (wakeLock === lock) { wakeLock = null; updateAwakeBadge(); } });
       wakeLock = lock;
       // Settings may have changed while the request was in flight.
-      if (!settings.keepAwake || !book) releaseAwake();
+      if (!settings.keepAwake || !book || $('reader').hidden) releaseAwake();
     } catch {
       wakeLock = null;
     } finally {
@@ -466,7 +576,7 @@
   $('pacerText').addEventListener('click', jumpToWord);
 
   document.addEventListener('keydown', (e) => {
-    if (!book || e.ctrlKey || e.metaKey || e.altKey || dialog.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
@@ -500,4 +610,5 @@
 
   setWpm(settings.wpm);
   applyAppearance();
+  renderHome();
 })();

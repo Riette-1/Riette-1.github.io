@@ -175,6 +175,10 @@ body.reading { height: 100vh; height: 100dvh; overflow: hidden; }
 .btn.primary { background: var(--grad); color: var(--accent-text); border-color: transparent; box-shadow: 0 4px 14px var(--glow-1); }
 .btn.primary:hover { filter: brightness(1.06); }
 .btn.big { padding: 14px 24px; font-size: 16px; }
+.btn.secondary { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight: 600; }
+.btn.secondary:hover { border-color: var(--accent); }
+.btn.link { background: none; border: 0; color: var(--muted); padding: 10px 6px; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.btn.link:hover { color: var(--text); }
 .btn.round { width: 48px; height: 48px; padding: 0; }
 .btn.round.sm { width: 36px; height: 36px; }
 .btn.round.sm .ic { width: 18px; height: 18px; }
@@ -203,6 +207,9 @@ body.reading { height: 100vh; height: 100dvh; overflow: hidden; }
 .book-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .book-sub { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.reading .brand-name { display: none; }
+body.reading .brand { cursor: pointer; }
+body:not(.reading) .book-info { visibility: hidden; }
+body:not(.reading) #goHome { display: none; }
 
 /* ---------- Welcome ---------- */
 
@@ -243,6 +250,71 @@ body.reading .brand-name { display: none; }
 .flash-demo span { color: var(--pivot); }
 .pacer-demo span { background: var(--highlight); color: var(--highlight-text); border-radius: 4px; padding: 0 3px; }
 .timing-demo span { color: var(--accent); font-weight: 700; padding: 0 .3em 0 0; }
+
+/* ---------- Nightstand ---------- */
+
+.nightstand { margin: 8px 0 20px; }
+.greeting { margin: 0; font-size: clamp(1.7rem, 5vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.15; }
+.greeting-sub { margin: 4px 0 18px; color: var(--muted); }
+.eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+
+.ns-card {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.ns-cover {
+  flex: none;
+  position: relative;
+  width: 128px;
+  aspect-ratio: 2 / 3;
+  border-radius: 4px 10px 10px 4px;
+  overflow: hidden;
+  background: var(--grad);
+  transform: rotate(-2.5deg);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+/* A hint of a spine down the left edge. */
+.ns-cover::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 7px; background: linear-gradient(to right, rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.12)); }
+.ns-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ns-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 12px 14px 18px;
+  text-align: center;
+  color: var(--accent-text);
+  font: 600 15px/1.25 var(--read-font);
+  overflow: hidden;
+}
+.ns-body { flex: 1; min-width: 0; }
+.ns-body h2 { margin: 0; font-family: var(--read-font); font-size: clamp(1.3rem, 4vw, 1.7rem); line-height: 1.2; overflow-wrap: anywhere; }
+.ns-author { margin: 4px 0 16px; color: var(--muted); }
+.ns-author:empty { display: none; }
+.ns-progress { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ns-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.ns-bar span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--grad); }
+.ns-where { margin: 8px 0 18px; color: var(--muted); font-size: 14px; }
+.ns-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+
+.welcome.has-nightstand .dropzone { padding: 28px 20px; }
+.welcome.has-nightstand .hero-icon { display: none; }
+.welcome.has-nightstand .dropzone h1 { font-size: 1.3rem; letter-spacing: -0.01em; }
+
+@media (max-width: 560px) {
+  .ns-card { flex-direction: column; text-align: center; gap: 20px; padding: 24px 18px; }
+  .ns-cover { width: 116px; }
+  .ns-actions { justify-content: center; }
+  .ns-actions .btn.big { width: 100%; }
+  .greeting, .greeting-sub { text-align: center; }
+}
 
 /* ---------- Reader layout ---------- */
 
