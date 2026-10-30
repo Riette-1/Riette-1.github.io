@@ -10,12 +10,17 @@
   <meta name="description" content="Nook: read faster, from your favourite corner. A speed reader for your EPUB books that keeps everything on your device." />
   <meta name="application-name" content="Nook" />
   <meta name="apple-mobile-web-app-title" content="Nook" />
-  <link rel="stylesheet" href="style.css?v=12" />
-  <script src="epub.js?v=12" defer></script>
-  <script src="library.js?v=12" defer></script>
-  <script src="journal.js?v=12" defer></script>
-  <script src="dictionary.js?v=12" defer></script>
-  <script src="app.js?v=12" defer></script>
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css?v=13" />
+  <script src="epub.js?v=13" defer></script>
+  <script src="library.js?v=13" defer></script>
+  <script src="journal.js?v=13" defer></script>
+  <script src="dictionary.js?v=13" defer></script>
+  <script src="app.js?v=13" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -38,12 +43,12 @@
       <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z"/></symbol>
       <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
       <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></g></symbol>
-      <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2 4 13.5h6.5L9.5 22 20 9.5h-6.6z"/></symbol>
+      <symbol id="i-nook" viewBox="6 6 52 52"><path fill="#fde68a" d="M36 9a12 12 0 1 0 10 19.5 10 10 0 1 1-10-19.5z"/><path fill="#ffffff" d="M32 37c-6-4-14-5-22-4v19c8-1 16 0 22 4zm0 0c6-4 14-5 22-4v19c-8-1-16 0-22 4z"/></symbol>
     </defs>
   </svg>
 
   <header class="topbar">
-    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="18" height="18"><use href="#i-bolt"/></svg></span><span class="brand-name">Nook</span></div>
+    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="20" height="20"><use href="#i-nook"/></svg></span><span class="brand-name">Nook</span></div>
     <div class="book-info" id="bookInfo">
       <div class="book-title" id="bookTitle"></div>
       <div class="book-sub" id="bookSub"></div>
@@ -79,7 +84,7 @@
 
     <section class="hero" id="hero">
       <div class="dropzone" id="dropzone">
-        <div class="hero-icon"><svg width="34" height="34"><use href="#i-bolt"/></svg></div>
+        <div class="hero-icon"><svg width="38" height="38"><use href="#i-nook"/></svg></div>
         <h1>Welcome to Nook</h1>
         <p class="tagline">Read faster, from your favourite corner.</p>
         <p>Your bookshelf is empty. Add an <strong>.epub</strong> to get started. Books stay on this device and are never uploaded.</p>
@@ -153,7 +158,7 @@
     </section>
 
     <footer class="credit">
-      <span class="credit-mark"><svg width="14" height="14"><use href="#i-bolt"/></svg></span>
+      <span class="credit-mark"><svg width="16" height="16"><use href="#i-nook"/></svg></span>
       <span><strong>Nook</strong> · Created by <strong>Riëtte</strong></span>
     </footer>
   </main>
