@@ -16,7 +16,7 @@
   const settings = Object.assign(
     {
       wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1, lang: 'af',
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1, lang: 'af', quizzes: false,
     },
     store.get('sr:settings', {}),
   );
@@ -626,6 +626,7 @@
     stepDelay = groupDelay(pos, n);
     stepStarted = performance.now();
     stepAdvance = () => {
+      const fromChapter = chapterAt(pos);
       pos += n;
       Journal.addWords(n);
       if (pos >= book.words.length) {
@@ -633,7 +634,14 @@
         Journal.finished(bookKey, book.title);
         pause();
         render();
-        showStatus(t('You finished “{title}”. Well read!', { title: book.title }), false, 6000);
+        const done = () => showStatus(t('You finished “{title}”. Well read!', { title: book.title }), false, 6000);
+        if (!offerQuiz(fromChapter, done)) done();
+        return;
+      }
+      if (chapterAt(pos) !== fromChapter && quizFor(fromChapter)) {
+        pause();
+        render();
+        offerQuiz(fromChapter, play);
         return;
       }
       step();
@@ -715,6 +723,132 @@
     savePos(true);
   }
 
+  // ---------- Chapter quizzes ----------
+
+  const quizSheet = $('quizSheet');
+  let quiz = null;
+  let quizCache = { key: '', ci: -1, questions: null };
+
+  // The questions for a chapter, or null when quizzes are off or the
+  // chapter is too short. Kept until shown, so a check and the quiz match.
+  function quizFor(ci) {
+    if (!settings.quizzes || !book || ci < 0) return null;
+    if (quizCache.key !== bookKey || quizCache.ci !== ci) quizCache = { key: bookKey, ci, questions: Quiz.make(book, ci, isBreak) };
+    return quizCache.questions;
+  }
+
+  // Show the quiz for chapter ci if there is one; `then` runs afterwards.
+  function offerQuiz(ci, then) {
+    const questions = quizFor(ci);
+    if (!questions) return false;
+    quizCache = { key: '', ci: -1, questions: null };
+    quiz = { ci, questions, i: 0, right: 0, then };
+    $('quizTitle').textContent = book.chapters[ci].title;
+    $('quizDots').replaceChildren(...questions.map(() => document.createElement('span')));
+    renderQuestion();
+    if (!quizSheet.open) quizSheet.showModal();
+    return true;
+  }
+
+  const button = (cls, label, onClick) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = cls;
+    b.textContent = label;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+
+  function renderQuestion() {
+    const q = quiz.questions[quiz.i];
+    const body = $('quizBody');
+    body.replaceChildren();
+    $('quizActions').replaceChildren();
+    [...$('quizDots').children].forEach((d, k) => d.classList.toggle('done', k < quiz.i));
+
+    const prompt = document.createElement('p');
+    prompt.className = 'quiz-prompt';
+    prompt.textContent = `${t('Question {n} of {total}', { n: quiz.i + 1, total: quiz.questions.length })} · ${t(q.type === 'cloze' ? 'Fill in the missing word' : 'Which came first in this chapter?')}`;
+    body.append(prompt);
+    if (q.type === 'cloze') {
+      const text = document.createElement('p');
+      text.className = 'quiz-text';
+      text.textContent = q.text;
+      body.append(text);
+    }
+    const choices = document.createElement('div');
+    choices.className = 'quiz-choices';
+    for (const c of q.choices) {
+      choices.append(button(`quiz-choice${q.type === 'order' ? ' long' : ''}`, c, () => answer(c, choices)));
+    }
+    body.append(choices);
+  }
+
+  function answer(choice, choices) {
+    const q = quiz.questions[quiz.i];
+    const right = choice === q.answer;
+    if (right) quiz.right++;
+    for (const b of choices.children) {
+      b.disabled = true;
+      if (b.textContent === q.answer) b.classList.add('right');
+      else if (b.textContent === choice) b.classList.add('wrong');
+    }
+    const fb = document.createElement('p');
+    fb.className = 'quiz-feedback';
+    fb.textContent = right ? t('Correct!') : q.type === 'cloze' ? t('Not quite. The answer is “{answer}”.', { answer: q.answer }) : t('Not quite. This part came first.');
+    $('quizBody').append(fb);
+    const last = quiz.i === quiz.questions.length - 1;
+    const next = button('btn primary big', t(last ? 'See my score' : 'Next question'), () => {
+      if (last) showScore();
+      else { quiz.i++; renderQuestion(); }
+    });
+    $('quizActions').replaceChildren(next);
+    next.focus();
+  }
+
+  function showScore() {
+    const { right, questions, ci } = quiz;
+    Journal.quiz(bookKey, ci, right, questions.length);
+    [...$('quizDots').children].forEach((d) => d.classList.add('done'));
+    const stats = Journal.quizStats();
+    const ratio = right / questions.length;
+    const box = document.createElement('div');
+    box.className = 'quiz-score';
+    const big = document.createElement('span');
+    big.className = 'big';
+    big.textContent = `${right}/${questions.length}`;
+    const lines = [
+      t('{right} of {total} right', { right, total: questions.length }),
+      t(ratio === 1 ? 'Sharp reading! You took it all in.' : ratio >= 0.5 ? 'Nicely done. Most of it stuck.' : 'Some of it slipped by. Try a slightly slower speed?'),
+    ];
+    box.append(big, ...lines.map((l) => Object.assign(document.createElement('p'), { textContent: l })));
+    const avg = document.createElement('p');
+    avg.className = 'muted';
+    avg.textContent = `${plural(stats.count, 'Average over {n} quiz: {pct}%', 'Average over {n} quizzes: {pct}%', { pct: stats.pct })} · ${t('You can turn quizzes off in Settings.')}`;
+    box.append(avg);
+    $('quizBody').replaceChildren(box);
+    const again = button('btn link', t('Read the chapter again'), () => {
+      const start = book.chapters[ci].start;
+      quiz = null;
+      quizSheet.close();
+      seek(start);
+    });
+    const go = button('btn primary big', t('Continue reading'), finishQuiz);
+    $('quizActions').replaceChildren(go, again);
+    go.focus();
+  }
+
+  function finishQuiz() {
+    const then = quiz && quiz.then;
+    quiz = null;
+    quizSheet.close();
+    if (then) then();
+  }
+
+  $('quizSkip').addEventListener('click', finishQuiz);
+  // Escape (or the back gesture) closes the quiz and leaves reading paused.
+  quizSheet.addEventListener('close', () => { quiz = null; });
+
   // ---------- Storytime ----------
 
   let storyChunk = null;
@@ -734,7 +868,10 @@
     }
   }
 
+  let storyChapter = -1;
+
   function tell() {
+    storyChapter = chapterAt(pos);
     Storytime.speak({
       words: book.words,
       isBreak,
@@ -743,6 +880,16 @@
       lang: book.language,
       rate: settings.storyRate,
       onChunk: (start, end) => {
+        const ci = chapterAt(start);
+        if (ci !== storyChapter && quizFor(storyChapter)) {
+          const finishedChapter = storyChapter;
+          pause();
+          pos = start;
+          render();
+          offerQuiz(finishedChapter, play);
+          return;
+        }
+        storyChapter = ci;
         storyChunk = [start, end];
         pos = start;
         render();
@@ -757,7 +904,8 @@
         if (reachedEnd) {
           pos = book.words.length - 1;
           pause();
-          showStatus(t('That’s the end of “{title}”. Sweet dreams!', { title: book.title }), false, 6000);
+          const done = () => showStatus(t('That’s the end of “{title}”. Sweet dreams!', { title: book.title }), false, 6000);
+          if (!offerQuiz(chapterAt(pos), done)) done();
         } else {
           pause();
           showStatus(t('The voice stopped ({error}). Press play to carry on.', { error: error || t('unknown error') }), true, 6000);
@@ -971,7 +1119,11 @@
     const atStart = stage.scrollTop <= 0;
     const ci = chapterAt(pos);
     // Past the edge of a chapter, carry on into the next or previous one.
-    if (dir > 0 && atEnd && ci < book.chapters.length - 1) return seek(book.chapters[ci + 1].start);
+    if (dir > 0 && atEnd && ci < book.chapters.length - 1) {
+      const next = () => seek(book.chapters[ci + 1].start);
+      if (!offerQuiz(ci, next)) next();
+      return;
+    }
     if (dir < 0 && atStart && ci > 0) return seek(book.chapters[ci - 1].start);
     stage.scrollBy({ top: dir * stage.clientHeight * 0.85, behavior: 'smooth' });
   }
@@ -1120,7 +1272,7 @@
   $('fontSize').value = settings.fontSize;
   $('fontSize').addEventListener('input', (e) => { settings.fontSize = +e.target.value; saveSettings(); applyAppearance(); });
 
-  for (const id of ['pauses', 'ramp', 'bionic', 'keepAwake']) {
+  for (const id of ['pauses', 'ramp', 'bionic', 'keepAwake', 'quizzes']) {
     $(id).checked = settings[id];
     $(id).addEventListener('change', (e) => {
       settings[id] = e.target.checked;
@@ -1569,7 +1721,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;

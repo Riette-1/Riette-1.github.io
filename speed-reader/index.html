@@ -18,15 +18,16 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=20" />
-  <script src="i18n.js?v=20" defer></script>
-  <script src="epub.js?v=20" defer></script>
-  <script src="library.js?v=20" defer></script>
-  <script src="journal.js?v=20" defer></script>
-  <script src="dictionary.js?v=20" defer></script>
-  <script src="storytime.js?v=20" defer></script>
-  <script src="backup.js?v=20" defer></script>
-  <script src="app.js?v=20" defer></script>
+  <link rel="stylesheet" href="style.css?v=21" />
+  <script src="i18n.js?v=21" defer></script>
+  <script src="epub.js?v=21" defer></script>
+  <script src="library.js?v=21" defer></script>
+  <script src="journal.js?v=21" defer></script>
+  <script src="dictionary.js?v=21" defer></script>
+  <script src="storytime.js?v=21" defer></script>
+  <script src="backup.js?v=21" defer></script>
+  <script src="quiz.js?v=21" defer></script>
+  <script src="app.js?v=21" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -336,6 +337,21 @@
     </form>
   </dialog>
 
+  <dialog id="quizSheet" class="sheet quiz-sheet" aria-labelledby="quizTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <div>
+          <p class="eyebrow" data-i18n="Chapter quiz">Chapter quiz</p>
+          <h2 id="quizTitle"></h2>
+        </div>
+        <button type="button" class="btn link" id="quizSkip" data-i18n="Skip">Skip</button>
+      </div>
+      <div class="quiz-dots" id="quizDots" aria-hidden="true"></div>
+      <div class="quiz-body" id="quizBody" aria-live="polite"></div>
+      <div class="quiz-actions" id="quizActions"></div>
+    </form>
+  </dialog>
+
   <dialog id="settings" class="sheet" aria-labelledby="settingsTitle">
     <form method="dialog">
       <div class="sheet-head">
@@ -393,6 +409,7 @@
         <label class="toggle"><span><strong data-i18n="Smart pauses">Smart pauses</strong><small data-i18n="Linger at punctuation, paragraphs and long words">Linger at punctuation, paragraphs and long words</small></span><input type="checkbox" id="pauses" /></label>
         <label class="toggle"><span><strong data-i18n="Ease in">Ease in</strong><small data-i18n="Start a little slower each time you press play">Start a little slower each time you press play</small></span><input type="checkbox" id="ramp" /></label>
         <label class="toggle"><span><strong data-i18n="Bionic bolding">Bionic bolding</strong><small data-i18n="Bold the start of each word in Pacer">Bold the start of each word in Pacer</small></span><input type="checkbox" id="bionic" /></label>
+        <label class="toggle"><span><strong data-i18n="Chapter quizzes">Chapter quizzes</strong><small data-i18n="A short quiz at the end of each chapter to check what stuck">A short quiz at the end of each chapter to check what stuck</small></span><input type="checkbox" id="quizzes" /></label>
       </section>
 
       <section>
