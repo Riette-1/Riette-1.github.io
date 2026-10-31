@@ -358,6 +358,42 @@ const I18n = (() => {
     'Great reading! Every story makes you stronger. 💪': 'Lekker gelees! Elke storie maak jou sterker. 💪',
     'Keep reading': 'Lees verder',
     'Delete': 'Vee uit',
+    // Creatures and their growing stages
+    'Dragon': 'Draak', 'Unicorn': 'Eenhoring', 'Pegasus': 'Pegasus', 'Dinosaur': 'Dinosourus', 'Owl': 'Uil',
+    'Vlammie': 'Vlammie', 'Sterretjie': 'Sterretjie', 'Wolkie': 'Wolkie', 'Dino': 'Dino',
+    'a dragon egg': '’n drakie-eier', 'a tiny dragon': '’n piepklein drakie', 'a little dragon': '’n klein drakie',
+    'a big dragon': '’n groot draak', 'a fire dragon': '’n vuurdraak', 'the dragon king': 'die drakekoning',
+    'a sparkle': '’n vonkeltjie', 'a little foal': '’n klein vulletjie', 'a unicorn': '’n eenhoring',
+    'a rainbow unicorn': '’n reënboog-eenhoring', 'a star unicorn': '’n ster-eenhoring', 'the royal unicorn': 'die koninklike eenhoring',
+    'a little cloud': '’n wolkie', 'a baby pegasus': '’n baba-pegasus', 'a flying pegasus': '’n vlieënde pegasus',
+    'a rainbow pegasus': '’n reënboog-pegasus', 'the royal pegasus': 'die koninklike pegasus',
+    'a dino egg': '’n dino-eier', 'a baby dino': '’n baba-dino', 'a long-neck dino': '’n langnek-dino',
+    'a T-rex': '’n T-rex', 'a cool T-rex': '’n cool T-rex', 'the dino king': 'die dinokoning',
+    'Royal buddy': 'Koninklike maatjie',
+    'Choose your buddy': 'Kies jou maatjie',
+    'Change buddy': 'Kies ’n ander maatjie',
+    'Choose your reading buddy': 'Kies jou leesmaatjie',
+    'It grows bigger the more you read!': 'Dit groei groter hoe meer jy lees!',
+    'Give it a name': 'Gee dit ’n naam',
+    'That’s my buddy!': 'Dis my maatjie!',
+    // Kids' themes
+    'My colours': 'My kleure',
+    'Sunshine': 'Sonskyn', 'Jungle': 'Oerwoud', 'Space': 'Ruimte', 'Candy': 'Lekkergoed',
+    // Read-along with names
+    '🎧 {kid} and {adult}’s story time': '🎧 {kid} en {adult} se storietyd',
+    '🎧 {kid}’s story time': '🎧 {kid} se storietyd',
+    '🎧 Story time': '🎧 Storietyd',
+    'Let’s read {title}.': 'Kom ons lees {title}.',
+    'Let’s carry on with {title}.': 'Kom ons lees verder in {title}.',
+    'Welcome back, {kid}! Let’s carry on with {title}.': 'Welkom terug, {kid}! Kom ons lees verder in {title}.',
+    'Hello {kid}! It’s time for {adult} and {kid}’s story. Today we’re reading {title}.': 'Hallo {kid}! Dis tyd vir {adult} en {kid} se storie. Vandag lees ons {title}.',
+    'Hello {kid}! Today we’re reading {title}.': 'Hallo {kid}! Vandag lees ons {title}.',
+    'Well listened, {kid}! That’s the end of the chapter.': 'Mooi geluister, {kid}! Dis die einde van die hoofstuk.',
+    'That’s the end of the chapter.': 'Dis die einde van die hoofstuk.',
+    'You listened to the whole book, {kid}! {adult} will be so proud.': 'Jy het na die hele boek geluister, {kid}! {adult} sal so trots wees.',
+    'You listened to the whole book, {kid}! Well done!': 'Jy het na die hele boek geluister, {kid}! Mooi so!',
+    'That’s the end of the book. Well done!': 'Dis die einde van die boek. Mooi so!',
+    'Picture': 'Prentjie',
     'Mia': 'Mia',
     'Mamma': 'Mamma',
 
@@ -481,6 +517,14 @@ const I18n = (() => {
     return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
   }
 
+  // Translate into a specific language, e.g. what the voice says should
+  // match the book's language rather than the screen's.
+  function tIn(language, key, vars) {
+    const saved = lang;
+    lang = /^af\b/i.test(language || '') ? 'af' : 'en';
+    try { return t(key, vars); } finally { lang = saved; }
+  }
+
   // Pick the singular or plural form, e.g. plural(2, '{n} book', '{n} books').
   const plural = (n, one, many, vars) => t(n === 1 ? one : many, { n, ...vars });
 
@@ -510,6 +554,7 @@ const I18n = (() => {
 
   return {
     t,
+    tIn,
     plural,
     apply,
     setLang,

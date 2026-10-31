@@ -86,7 +86,10 @@
       return;
     }
     showStatus('');
+    // Let go of the previous book's pictures.
+    if (book && book.pictures) for (const list of book.pictures.values()) for (const pic of list) URL.revokeObjectURL(pic.url);
     book = loaded;
+    greeted = false;
     bookKey = `sr:pos:${book.title}|${book.author}|${book.words.length}`;
     pos = Math.min(store.get(bookKey, 0), book.words.length - 1);
     pacerChapter = -1;
@@ -517,7 +520,12 @@
   $('goHome').addEventListener('click', goHome);
   $('brand').addEventListener('click', () => { if (book && !$('reader').hidden) goHome(); });
 
-  $('fileInput').addEventListener('change', (e) => { loadBook(e.target.files[0]); e.target.value = ''; });
+  $('fileInput').addEventListener('change', (e) => {
+    // Grown-ups add books from Settings in kids' mode; get out of the way.
+    if (dialog.open) dialog.close();
+    loadBook(e.target.files[0]);
+    e.target.value = '';
+  });
 
   ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.add('drag-over'); }));
   ['dragleave', 'drop'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.remove('drag-over'); }));
@@ -908,10 +916,13 @@
   // for something; false means carry straight on.
   function endOfChapter(ci, resume) {
     const earned = Kids.on ? Kids.chapterDone(isAfrikaansBook()) : [];
-    if (!earned.length && !quizFor(ci)) return false;
+    const cheer = Kids.on && settings.mode === 'story';
+    if (!earned.length && !quizFor(ci) && !cheer) return false;
     pause();
     render();
-    showStickers(earned, () => { if (!offerQuiz(ci, resume)) resume(); });
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, resume)) resume(); });
+    if (cheer) sayAloud(chapterCheer(), next);
+    else next();
     return true;
   }
 
@@ -923,7 +934,9 @@
       showStatus(message, false, 6000);
       if (Kids.on) Kids.confetti(60);
     };
-    showStickers(earned, () => { if (!offerQuiz(ci, done)) done(); });
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, done)) done(); });
+    if (Kids.on && settings.mode === 'story') sayAloud(bookCheer(), next);
+    else next();
   }
 
   // ---------- Kids' mode ----------
@@ -958,9 +971,8 @@
     const name = Kids.state.childName;
     const b = Kids.buddy();
     $('greeting').textContent = name ? t('Hello, {name}!', { name }) : t('Hello, reader!');
-    const face = $('buddyFace');
-    face.textContent = b.face;
-    if (b.extra) face.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: b.extra }));
+    drawBuddy($('buddyFace'), b);
+    $('chooseBuddy').textContent = b.chosen ? t('Change buddy') : t('Choose your buddy');
     $('buddyTitle').textContent = t('{buddy} is {stage}', { buddy: b.name, stage: t(b.label) });
     $('buddyText').textContent = b.last
       ? t('{buddy} is all grown up. Keep reading to keep them happy!', { buddy: b.name })
@@ -988,7 +1000,117 @@
       grid.append(item);
     }
     $('stickerCount').textContent = t('{got} of {total}', { got, total: Kids.STICKERS.length });
+
+    const themes = $('kidThemes');
+    themes.replaceChildren(...Kids.THEMES.map((th) => {
+      const b2 = document.createElement('button');
+      b2.type = 'button';
+      b2.className = `kid-theme t-${th.id}`;
+      b2.setAttribute('role', 'radio');
+      b2.setAttribute('aria-checked', String((Kids.state.theme || 'sunshine') === th.id));
+      b2.append(Object.assign(document.createElement('span'), { className: 'em', textContent: th.emoji }), t(th.name));
+      b2.addEventListener('click', () => { Kids.setTheme(th.id); applyAppearance(); renderKidsHome(); });
+      return b2;
+    }));
   }
+
+  // A creature's face, with its extra (a crown, rainbow...) and drawn wings.
+  function drawBuddy(host, stage) {
+    host.replaceChildren(stage.face);
+    if (stage.wings) {
+      for (const side of ['left', 'right']) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', `wing ${side}`);
+        svg.innerHTML = '<use href="#i-wing"/>';
+        host.append(svg);
+      }
+    }
+    if (stage.extra) host.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: stage.extra }));
+  }
+
+  // ---- Choosing a creature.
+  const creatureSheet = $('creatureSheet');
+  function openCreatures() {
+    const current = Kids.buddy();
+    const grid = $('creatureGrid');
+    grid.replaceChildren(...Object.entries(Kids.CREATURES).map(([id, c]) => {
+      const label = document.createElement('label');
+      label.className = 'creature';
+      const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'creature', value: id, checked: current.creature === id });
+      const card = document.createElement('span');
+      card.className = 'card';
+      const pv = document.createElement('span');
+      pv.className = 'pv';
+      // Preview the grown-up form, so children can see what they're growing.
+      drawBuddy(pv, { ...c.stages[3] });
+      card.append(pv, Object.assign(document.createElement('strong'), { textContent: t(c.name) }), Object.assign(document.createElement('small'), { textContent: t(c.stages[0].label) }));
+      label.append(input, card);
+      input.addEventListener('change', () => { if (!$('buddyName').dataset.edited) $('buddyName').value = t(c.pet); });
+      return label;
+    }));
+    $('buddyName').value = Kids.state.buddyName || (current.chosen ? current.name : '');
+    delete $('buddyName').dataset.edited;
+    creatureSheet.showModal();
+  }
+  $('buddyName').addEventListener('input', (e) => { e.target.dataset.edited = '1'; });
+  $('chooseBuddy').addEventListener('click', openCreatures);
+  $('creatureGo').addEventListener('click', () => {
+    const picked = creatureSheet.querySelector('input[name="creature"]:checked');
+    if (!picked) return;
+    const c = Kids.CREATURES[picked.value];
+    Kids.chooseCreature(picked.value, $('buddyName').value || t(c.pet));
+    creatureSheet.close();
+    renderHome();
+    Kids.confetti(30);
+  });
+
+  // ---- Picture bubbles: things in the story float up as pictures.
+  let lastBubble = 0;
+  const recentBubbles = new Map();
+  function bubble(word) {
+    const pic = Kids.pictureFor(word);
+    if (!pic || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const now = Date.now();
+    if (now - lastBubble < 500 || now - (recentBubbles.get(pic) || 0) < 6000) return;
+    lastBubble = now;
+    recentBubbles.set(pic, now);
+    const b2 = Object.assign(document.createElement('span'), { textContent: pic });
+    b2.style.left = `${10 + Math.random() * 70}%`;
+    $('picBubbles').append(b2);
+    setTimeout(() => b2.remove(), 2500);
+  }
+
+  // ---- Read-along with names: in the book's language, so the voice can say it.
+  const names = () => ({ kid: Kids.state.childName, adult: Kids.state.adultName });
+  function spoken(key, vars = {}) {
+    return I18n.tIn(book.language || 'en', key, { title: book.title, ...vars });
+  }
+  function storyGreeting() {
+    const { kid, adult } = names();
+    const atStart = pos <= book.chapters[0].start + 3;
+    if (!kid) return spoken(atStart ? 'Let’s read {title}.' : 'Let’s carry on with {title}.');
+    if (!atStart) return spoken('Welcome back, {kid}! Let’s carry on with {title}.', { kid });
+    return adult
+      ? spoken('Hello {kid}! It’s time for {adult} and {kid}’s story. Today we’re reading {title}.', { kid, adult })
+      : spoken('Hello {kid}! Today we’re reading {title}.', { kid });
+  }
+  function chapterCheer() {
+    const { kid } = names();
+    return kid ? spoken('Well listened, {kid}! That’s the end of the chapter.', { kid }) : spoken('That’s the end of the chapter.');
+  }
+  function bookCheer() {
+    const { kid, adult } = names();
+    if (kid && adult) return spoken('You listened to the whole book, {kid}! {adult} will be so proud.', { kid, adult });
+    return kid ? spoken('You listened to the whole book, {kid}! Well done!', { kid }) : spoken('That’s the end of the book. Well done!');
+  }
+  function updateListenBanner() {
+    const show = Kids.on && settings.mode === 'story';
+    $('listenBanner').hidden = !show;
+    if (!show) return;
+    const { kid, adult } = names();
+    $('listenBanner').textContent = kid && adult ? t('🎧 {kid} and {adult}’s story time', { kid, adult }) : kid ? t('🎧 {kid}’s story time', { kid }) : t('🎧 Story time');
+  }
+  const sayAloud = (text, onEnd) => Storytime.say(text, { voiceURI: settings.voiceURI, lang: book.language, rate: settings.storyRate, onEnd });
 
   // The reading map on the nightstand card.
   function renderMap(b) {
@@ -1010,6 +1132,7 @@
   // ---- Tap a word to hear it.
   function sayWord(i) {
     const w = book.words[i];
+    bubble(w);
     if (!Storytime.say(w, { voiceURI: settings.voiceURI, lang: book.language, rate: 0.85 })) return;
     const span = $('pacerText').querySelector(`[data-i="${i}"]`);
     if (span) { span.classList.add('said'); setTimeout(() => span.classList.remove('said'), 1200); }
@@ -1066,6 +1189,9 @@
       const stage = $('pacerStage');
       stage.scrollTo({ top: stage.scrollTop + first.getBoundingClientRect().top - stage.getBoundingClientRect().top - 40, behavior: 'smooth' });
     }
+    const pics = [];
+    for (let i = s; i <= e && pics.length < 6; i++) { const pic = Kids.pictureFor(book.words[i]); if (pic && !pics.includes(pic)) pics.push(pic); }
+    $('sceneStrip').textContent = pics.join(' ');
     const kid = Kids.state.childName || t('you');
     const grown = Kids.state.adultName || t('the grown-up');
     $('turnCard').classList.toggle('adult', !child);
@@ -1298,6 +1424,7 @@
     $('changePin').hidden = !Kids.hasPin();
     $('childName').value = Kids.state.childName;
     $('adultName').value = Kids.state.adultName;
+    updateListenBanner();
     if (!allowedModes().includes(settings.mode) && book) setMode(Kids.on ? Kids.state.mode || 'page' : 'pacer');
     else if (!allowedModes().includes(settings.mode)) settings.mode = Kids.on ? 'page' : 'pacer';
     renderHome();
@@ -1320,6 +1447,8 @@
     dialog.close();
     applyKids();
     showStatus(t('Kids’ mode is on. Settings now need the grown-up PIN.'), false, 5000);
+    // Let the child pick their creature straight away.
+    if (!Kids.buddy().chosen) openCreatures();
   });
   $('changePin').addEventListener('click', async () => {
     if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
@@ -1349,9 +1478,14 @@
 
   let storyChapter = -1;
 
+  let greeted = false;
+
   function tell() {
     storyChapter = chapterAt(pos);
+    const intro = Kids.on && !greeted ? storyGreeting() : '';
+    greeted = true;
     Storytime.speak({
+      intro,
       words: book.words,
       isBreak,
       from: pos,
@@ -1375,6 +1509,7 @@
         if (i === pos) return;
         pos = i;
         render();
+        if (Kids.on) bubble(book.words[i]);
       },
       onDone: (reachedEnd, error) => {
         if (reachedEnd) {
@@ -1516,6 +1651,18 @@
     pacerSpans = [];
     let p = document.createElement('p');
     for (let i = ch.start; i < ch.end; i++) {
+      const pics = book.pictures && book.pictures.get(i);
+      if (pics) {
+        if (p.childNodes.length) { frag.append(p); p = document.createElement('p'); }
+        for (const pic of pics) {
+          const fig = document.createElement('figure');
+          fig.className = 'book-pic';
+          const img = Object.assign(document.createElement('img'), { src: pic.url, alt: pic.alt || '', loading: 'lazy' });
+          fig.append(img);
+          if (pic.alt) fig.append(Object.assign(document.createElement('figcaption'), { textContent: pic.alt }));
+          frag.append(fig);
+        }
+      }
       const w = book.words[i];
       const s = document.createElement('span');
       s.dataset.i = i;
@@ -1679,6 +1826,7 @@
     if (Kids.on) { Kids.state.mode = mode; Kids.save(); }
     saveSettings();
     $('turnCard').hidden = mode !== 'together';
+    updateListenBanner();
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
@@ -1707,7 +1855,7 @@
   }
 
   function applyAppearance() {
-    const theme = Kids.on ? 'kids' : settings.theme;
+    const theme = Kids.on ? `kids-${Kids.state.theme || 'sunshine'}` : settings.theme;
     if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.dataset.theme = theme;
     document.documentElement.style.setProperty('--scale', (Kids.on ? Math.max(settings.fontSize, 125) : settings.fontSize) / 100);
@@ -1994,6 +2142,16 @@
   };
   $('rsvpContext').addEventListener('click', (e) => { e.stopPropagation(); jumpToWord(e); });
   $('pacerText').addEventListener('click', jumpToWord);
+  // Tap a book picture to see it big.
+  $('pacerText').addEventListener('click', (e) => {
+    const img = e.target.closest('figure.book-pic img');
+    if (!img) return;
+    if (playing) pause();
+    $('picBig').src = img.src;
+    $('picBig').alt = img.alt;
+    $('picCaption').textContent = img.alt;
+    $('picSheet').showModal();
+  });
 
   function currentSelection() {
     const sel = getSelection();
@@ -2222,7 +2380,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
