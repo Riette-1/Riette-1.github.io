@@ -170,8 +170,21 @@ const Storytime = (() => {
     fillQueue();
   }
 
+  // Say a single word or short phrase, e.g. when a child taps a word.
+  function say(text, { voiceURI, lang, rate = 0.9 } = {}) {
+    if (!supported) return false;
+    stop();
+    const u = new SpeechSynthesisUtterance(speakable(text));
+    const voice = pickVoice(voiceURI, lang);
+    if (voice) { u.voice = voice; u.lang = voice.lang; }
+    u.rate = rate;
+    synth.speak(u);
+    return true;
+  }
+
   return {
     supported,
+    say,
     voices: () => (voices.length ? voices : loadVoices()),
     onVoicesChanged: (fn) => { onVoices = fn; },
     shortlist,

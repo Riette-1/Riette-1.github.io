@@ -18,16 +18,17 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=21" />
-  <script src="i18n.js?v=21" defer></script>
-  <script src="epub.js?v=21" defer></script>
-  <script src="library.js?v=21" defer></script>
-  <script src="journal.js?v=21" defer></script>
-  <script src="dictionary.js?v=21" defer></script>
-  <script src="storytime.js?v=21" defer></script>
-  <script src="backup.js?v=21" defer></script>
-  <script src="quiz.js?v=21" defer></script>
-  <script src="app.js?v=21" defer></script>
+  <link rel="stylesheet" href="style.css?v=22" />
+  <script src="i18n.js?v=22" defer></script>
+  <script src="epub.js?v=22" defer></script>
+  <script src="library.js?v=22" defer></script>
+  <script src="journal.js?v=22" defer></script>
+  <script src="dictionary.js?v=22" defer></script>
+  <script src="storytime.js?v=22" defer></script>
+  <script src="backup.js?v=22" defer></script>
+  <script src="quiz.js?v=22" defer></script>
+  <script src="kids.js?v=22" defer></script>
+  <script src="app.js?v=22" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -79,11 +80,13 @@
           <p class="eyebrow" data-i18n="On your nightstand">On your nightstand</p>
           <h2 id="nsTitle"></h2>
           <p class="ns-author" id="nsAuthor"></p>
-          <div class="ns-progress"><div class="ns-bar"><span id="nsBar"></span></div><span id="nsPct"></span></div>
-          <p class="ns-where" id="nsWhere"></p>
+          <div class="ns-progress adult-only"><div class="ns-bar"><span id="nsBar"></span></div><span id="nsPct"></span></div>
+          <div class="reading-map kid-only" id="readingMap"></div>
+          <p class="map-text kid-only" id="mapText"></p>
+          <p class="ns-where adult-only" id="nsWhere"></p>
           <div class="ns-actions">
             <button class="btn primary big" id="nsContinue"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="nsContinueLabel" data-i18n="Open to my bookmark">Open to my bookmark</span></button>
-            <button class="btn link" id="nsPlan" data-i18n="How long will it take?">How long will it take?</button>
+            <button class="btn link adult-only" id="nsPlan" data-i18n="How long will it take?">How long will it take?</button>
           </div>
         </div>
       </div>
@@ -97,7 +100,33 @@
         <p data-i18n-html="emptyShelf"></p>
         <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg><span data-i18n="Put a book on the shelf">Put a book on the shelf</span></label>
         <p class="hint" data-i18n="or drop an EPUB here">or drop an EPUB here</p>
+        <p class="kid-only kid-ask" data-i18n="Ask a grown-up to put a book on your shelf.">Ask a grown-up to put a book on your shelf.</p>
       </div>
+    </section>
+
+    <section class="kids-home kid-only" id="kidsHome" aria-labelledby="buddyTitle">
+      <div class="buddy-card">
+        <div class="buddy-face" id="buddyFace" aria-hidden="true"></div>
+        <div class="buddy-body">
+          <h2 id="buddyTitle"></h2>
+          <p id="buddyText"></p>
+          <div class="buddy-bar" aria-hidden="true"><span id="buddyBar"></span></div>
+          <p class="buddy-today" id="buddyToday"></p>
+        </div>
+      </div>
+      <div class="section-head">
+        <h2 data-i18n="My stickers">My stickers</h2>
+        <span class="section-note" id="stickerCount"></span>
+      </div>
+      <div class="sticker-grid" id="stickerGrid" role="list"></div>
+    </section>
+
+    <section class="word-jar" id="wordJar" hidden aria-labelledby="jarHeading">
+      <div class="section-head">
+        <h2 id="jarHeading"><span aria-hidden="true">🫙</span> <span data-i18n="My word jar">My word jar</span></h2>
+        <button type="button" class="btn secondary" id="playMatch" hidden><span aria-hidden="true">🎯</span> <span data-i18n="Play word match">Play word match</span></button>
+      </div>
+      <div class="jar" id="jarWords" role="list"></div>
     </section>
 
     <section class="shelf" id="shelf" hidden aria-labelledby="shelfHeading">
@@ -109,7 +138,7 @@
       <p class="section-foot" data-i18n="Drop an EPUB anywhere on this page to add it.">Drop an EPUB anywhere on this page to add it.</p>
     </section>
 
-    <section class="journal" id="journal" hidden aria-labelledby="journalHeading">
+    <section class="journal adult-only" id="journal" hidden aria-labelledby="journalHeading">
       <div class="section-head">
         <h2 id="journalHeading" data-i18n="Reading journal">Reading journal</h2>
         <span class="section-note" data-i18n="Time counted while a book is playing">Time counted while a book is playing</span>
@@ -146,7 +175,7 @@
         <p class="pace-note" data-i18n="Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.">Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.</p>
       </div>
     </section>
-    <section class="techniques" id="techniques">
+    <section class="techniques adult-only" id="techniques">
       <article>
         <div class="demo flash-demo" data-i18n-html="demoFlash"></div>
         <h2 data-i18n="Flash">Flash</h2>
@@ -164,7 +193,7 @@
       </article>
     </section>
 
-    <section class="install-card" id="installCard" hidden aria-labelledby="installTitle">
+    <section class="install-card adult-only" id="installCard" hidden aria-labelledby="installTitle">
       <img class="install-icon" src="icons/icon-192.png" alt="" width="64" height="64" />
       <div class="install-body">
         <h2 id="installTitle" data-i18n-html="installTitle"></h2>
@@ -189,10 +218,11 @@
   <main id="reader" class="reader" hidden>
     <div class="mode-bar fade-when-playing">
       <div class="segmented" role="tablist" aria-label="Reading mode">
-        <button role="tab" class="tab" data-mode="pacer" aria-selected="true" data-i18n="Pacer">Pacer</button>
-        <button role="tab" class="tab" data-mode="rsvp" aria-selected="false" data-i18n="Flash">Flash</button>
-        <button role="tab" class="tab" data-mode="page" aria-selected="false" data-i18n="Page">Page</button>
-        <button role="tab" class="tab" data-mode="story" aria-selected="false" data-i18n="Storytime">Storytime</button>
+        <button role="tab" class="tab adult-only" data-mode="pacer" aria-selected="true" data-i18n="Pacer">Pacer</button>
+        <button role="tab" class="tab adult-only" data-mode="rsvp" aria-selected="false" data-i18n="Flash">Flash</button>
+        <button role="tab" class="tab" data-mode="page" aria-selected="false"><span class="adult-only" data-i18n="Page">Page</span><span class="kid-only" data-i18n="I read">I read</span></button>
+        <button role="tab" class="tab" data-mode="story" aria-selected="false"><span class="adult-only" data-i18n="Storytime">Storytime</span><span class="kid-only" data-i18n="Read to me">Read to me</span></button>
+        <button role="tab" class="tab kid-only" data-mode="together" aria-selected="false" data-i18n="Read together">Read together</button>
       </div>
       <select id="chapterSelect" aria-label="Chapter"></select>
     </div>
@@ -214,6 +244,12 @@
         <h2 class="chapter-title" id="pacerTitle"></h2>
         <div class="pacer-text" id="pacerText"></div>
       </div>
+    </div>
+
+    <div class="turn-card" id="turnCard" hidden>
+      <span class="turn-face" id="turnFace" aria-hidden="true">🧒</span>
+      <div class="turn-text"><strong id="turnWho"></strong><small id="turnHint"></small></div>
+      <button type="button" class="btn primary big" id="turnDone"><span data-i18n="Done">Done</span> ✓</button>
     </div>
 
     <footer class="dock">
@@ -260,7 +296,7 @@
 
   <div class="sel-bar" id="selBar" role="toolbar" aria-label="Selected text" hidden>
     <button type="button" id="selDefine"><svg class="ic" width="20" height="20"><use href="#i-search"/></svg><span data-i18n="Look up">Look up</span></button>
-    <button type="button" id="selShare"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg><span data-i18n="Share quote">Share quote</span></button>
+    <button type="button" id="selShare" class="adult-only"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg><span data-i18n="Share quote">Share quote</span></button>
   </div>
 
   <dialog id="shareSheet" class="sheet share-sheet" aria-labelledby="shareTitle">
@@ -303,7 +339,7 @@
         </div>
       </div>
 
-      <section>
+      <section class="adult-only">
         <h3 data-i18n="How long will it take?">How long will it take?</h3>
         <div class="field">
           <span class="field-label" data-i18n="At this pace">At this pace</span>
@@ -332,7 +368,7 @@
 
       <div class="bs-actions">
         <button type="button" class="btn primary big" id="bsOpen"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="bsOpenLabel" data-i18n="Open to my bookmark">Open to my bookmark</span></button>
-        <button type="button" class="btn link" id="bsRemove" data-i18n="Take off the shelf">Take off the shelf</button>
+        <button type="button" class="btn link adult-only" id="bsRemove" data-i18n="Take off the shelf">Take off the shelf</button>
       </div>
     </form>
   </dialog>
@@ -349,6 +385,56 @@
       <div class="quiz-dots" id="quizDots" aria-hidden="true"></div>
       <div class="quiz-body" id="quizBody" aria-live="polite"></div>
       <div class="quiz-actions" id="quizActions"></div>
+    </form>
+  </dialog>
+
+  <dialog id="pinSheet" class="sheet pin-sheet" aria-labelledby="pinTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="pinTitle"></h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <p class="pin-help" id="pinHelp"></p>
+      <div class="pin-dots" id="pinDots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p class="pin-msg" id="pinMsg" role="alert"></p>
+      <div class="pin-pad" id="pinPad">
+        <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+        <span></span><button type="button" data-k="0">0</button><button type="button" data-k="back" aria-label="Delete">⌫</button>
+      </div>
+      <div class="pin-math" id="pinMath" hidden>
+        <label class="field-label" for="pinMathAnswer" id="pinMathQ"></label>
+        <input type="number" inputmode="numeric" class="text-input" id="pinMathAnswer" />
+        <button type="button" class="btn primary" id="pinMathGo" data-i18n="Check">Check</button>
+      </div>
+      <p class="pin-forgot"><button type="button" class="btn link" id="pinForgot" data-i18n="Forgot the PIN?">Forgot the PIN?</button></p>
+    </form>
+  </dialog>
+
+  <dialog id="wordSheet" class="sheet word-sheet" aria-labelledby="wordTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="wordTitle"></h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <button type="button" class="btn secondary" id="wordSay"><span aria-hidden="true">🔊</span> <span data-i18n="Hear it">Hear it</span></button>
+      <p class="word-meaning" id="wordMeaning"></p>
+      <p class="word-sentence" id="wordSentence"></p>
+      <p class="word-from" id="wordFrom"></p>
+      <p><button type="button" class="btn link" id="wordRemove" data-i18n="Take it out of the jar">Take it out of the jar</button></p>
+    </form>
+  </dialog>
+
+  <dialog id="matchSheet" class="sheet quiz-sheet" aria-labelledby="matchTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <div><p class="eyebrow" data-i18n="Word match">Word match</p><h2 id="matchTitle"></h2></div>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="quiz-dots" id="matchDots" aria-hidden="true"></div>
+      <div class="quiz-body" id="matchBody" aria-live="polite"></div>
+      <div class="quiz-actions" id="matchActions"></div>
     </form>
   </dialog>
 
@@ -417,6 +503,23 @@
         <p class="settings-note" data-i18n-html="voicesNote"></p>
         <p class="settings-note warn" id="voiceTip" hidden data-i18n="This device only has basic voices at the moment, which can sound robotic.">This device only has basic voices at the moment, which can sound robotic.</p>
         <p class="settings-note" id="voiceHelp"></p>
+      </section>
+
+      <section>
+        <h3 data-i18n="Kids’ mode (Kinderhoekie)">Kids’ mode (Kinderhoekie)</h3>
+        <p class="settings-note" data-i18n="A playful Boekhoek for children: no speed reading, a read-along voice, stickers, a reading buddy and reading together. A 4-digit PIN keeps grown-up settings locked.">A playful Boekhoek for children: no speed reading, a read-along voice, stickers, a reading buddy and reading together. A 4-digit PIN keeps grown-up settings locked.</p>
+        <div class="field">
+          <label class="field-label" for="childName"><span data-i18n="Child’s name">Child’s name</span></label>
+          <input type="text" class="text-input" id="childName" maxlength="20" autocomplete="off" placeholder="Mia" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="adultName"><span data-i18n="Who reads together with them?">Who reads together with them?</span></label>
+          <input type="text" class="text-input" id="adultName" maxlength="20" autocomplete="off" placeholder="Mamma" />
+        </div>
+        <div class="data-actions">
+          <button type="button" class="btn primary" id="kidsToggle"></button>
+          <button type="button" class="btn ghost" id="changePin" hidden data-i18n="Change the PIN">Change the PIN</button>
+        </div>
       </section>
 
       <section>

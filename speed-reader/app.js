@@ -27,8 +27,11 @@
     settings.version = 2;
     saveSettings();
   }
-  const MODES = ['pacer', 'rsvp', 'page', 'story'];
+  const MODES = ['pacer', 'rsvp', 'page', 'story', 'together'];
   if (!MODES.includes(settings.mode)) settings.mode = 'pacer';
+  // Children read at their own pace: no speed-reading modes in kids' mode,
+  // and reading together is only offered there.
+  const allowedModes = () => (Kids.on ? ['page', 'story', 'together'] : ['pacer', 'rsvp', 'page', 'story']);
 
   let book = null;
   let bookKey = '';
@@ -193,6 +196,9 @@
   }
 
   async function renderHome() {
+    // The buddy, stickers and word jar don't depend on the shelf: draw them now.
+    renderKidsHome();
+    renderJar();
     shelfBooks = await Library.books();
     coverUrls.forEach((u) => URL.revokeObjectURL(u));
     coverUrls = [];
@@ -208,10 +214,12 @@
 
     const hour = new Date().getHours();
     $('greeting').textContent = t(hour < 5 ? 'Up late?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
+    renderKidsHome();
 
     // The nightstand holds the most recently opened book.
     const cur = shelfBooks[0];
     const p = progressOf(cur);
+    renderMap(cur);
     $('nsTitle').textContent = cur.title;
     $('nsAuthor').textContent = cur.author || '';
     const cover = document.querySelector('.ns-cover');
@@ -307,7 +315,8 @@
 
   $('shelfGrid').addEventListener('click', (e) => {
     const open = e.target.closest('.sb-open');
-    if (open) openBookSheet(open.dataset.key);
+    if (open && Kids.on) openFromShelf(open.dataset.key);
+    else if (open) openBookSheet(open.dataset.key);
   });
   $('nsPlan').addEventListener('click', () => { if (shelfBooks[0]) openBookSheet(shelfBooks[0].key); });
 
@@ -632,18 +641,10 @@
       if (pos >= book.words.length) {
         pos = book.words.length - 1;
         Journal.finished(bookKey, book.title);
-        pause();
-        render();
-        const done = () => showStatus(t('You finished “{title}”. Well read!', { title: book.title }), false, 6000);
-        if (!offerQuiz(fromChapter, done)) done();
+        endOfBook(fromChapter, t('You finished “{title}”. Well read!', { title: book.title }));
         return;
       }
-      if (chapterAt(pos) !== fromChapter && quizFor(fromChapter)) {
-        pause();
-        render();
-        offerQuiz(fromChapter, play);
-        return;
-      }
+      if (chapterAt(pos) !== fromChapter && endOfChapter(fromChapter, play)) return;
       step();
     };
     timer = setTimeout(stepAdvance, stepDelay);
@@ -669,7 +670,7 @@
   }
 
   function play() {
-    if (!book || playing || settings.mode === 'page') return;
+    if (!book || playing || settings.mode === 'page' || settings.mode === 'together') return;
     if (settings.mode === 'story' && !Storytime.supported) {
       showStatus(t('This browser can’t read aloud. Try an up-to-date Chrome, Edge or Safari.'), true, 6000);
       return;
@@ -768,7 +769,10 @@
 
     const prompt = document.createElement('p');
     prompt.className = 'quiz-prompt';
-    prompt.textContent = `${t('Question {n} of {total}', { n: quiz.i + 1, total: quiz.questions.length })} · ${t(q.type === 'cloze' ? 'Fill in the missing word' : 'Which came first in this chapter?')}`;
+    prompt.textContent = Kids.on
+      ? t(q.type === 'cloze' ? '🔤 Which word is missing?' : '⏳ What happened first?')
+      : `${t('Question {n} of {total}', { n: quiz.i + 1, total: quiz.questions.length })} · ${t(q.type === 'cloze' ? 'Fill in the missing word' : 'Which came first in this chapter?')}`;
+    quiz.tries = 0;
     body.append(prompt);
     if (q.type === 'cloze') {
       const text = document.createElement('p');
@@ -787,6 +791,34 @@
   function answer(choice, choices) {
     const q = quiz.questions[quiz.i];
     const right = choice === q.answer;
+    // Children get to try again: no red, no "wrong".
+    if (Kids.on) {
+      quiz.tries++;
+      const old = $('quizBody').querySelector('.quiz-feedback');
+      if (old) old.remove();
+      const fb = document.createElement('p');
+      fb.className = 'quiz-feedback';
+      if (!right) {
+        const b = [...choices.children].find((x) => x.textContent === choice);
+        if (b) { b.disabled = true; b.classList.add('tried'); }
+        fb.textContent = t('Oops, try again! 💪');
+        $('quizBody').append(fb);
+        return;
+      }
+      if (quiz.tries === 1) quiz.right++;
+      for (const b of choices.children) { b.disabled = true; if (b.textContent === q.answer) b.classList.add('right'); }
+      fb.textContent = t(quiz.tries === 1 ? 'Yay! You got it! 🎉' : 'Yes! Well done! 🎉');
+      $('quizBody').append(fb);
+      Kids.confetti(20);
+      const lastKid = quiz.i === quiz.questions.length - 1;
+      const nextKid = button('btn primary big', t(lastKid ? 'See my stars' : 'Next question'), () => {
+        if (lastKid) showScore();
+        else { quiz.i++; renderQuestion(); }
+      });
+      $('quizActions').replaceChildren(nextKid);
+      nextKid.focus();
+      return;
+    }
     if (right) quiz.right++;
     for (const b of choices.children) {
       b.disabled = true;
@@ -814,6 +846,25 @@
     const ratio = right / questions.length;
     const box = document.createElement('div');
     box.className = 'quiz-score';
+    if (Kids.on) {
+      box.append(
+        Object.assign(document.createElement('div'), { className: 'quiz-stars', textContent: '⭐'.repeat(right) + '☆'.repeat(questions.length - right) }),
+        Object.assign(document.createElement('p'), { textContent: plural(right, 'You earned {n} star!', 'You earned {n} stars!') }),
+        Object.assign(document.createElement('p'), { textContent: t(right === questions.length ? 'Super reading! 🌟' : 'Great reading! Every story makes you stronger. 💪') }),
+      );
+      $('quizBody').replaceChildren(box);
+      const goKid = button('btn primary big', t('Keep reading'), () => {
+        const earned = Kids.check('quiz', { perfect: right === questions.length });
+        const then = quiz && quiz.then;
+        quiz = null;
+        quizSheet.close();
+        showStickers(earned, () => { if (then) then(); });
+      });
+      $('quizActions').replaceChildren(goKid);
+      goKid.focus();
+      if (right === questions.length) Kids.confetti(50);
+      return;
+    }
     const big = document.createElement('span');
     big.className = 'big';
     big.textContent = `${right}/${questions.length}`;
@@ -847,7 +898,435 @@
 
   $('quizSkip').addEventListener('click', finishQuiz);
   // Escape (or the back gesture) closes the quiz and leaves reading paused.
-  quizSheet.addEventListener('close', () => { quiz = null; });
+  quizSheet.addEventListener('close', () => { if (!quizSheet.open) quiz = null; });
+
+  // ---------- End of a chapter or book ----------
+
+  const isAfrikaansBook = () => /^af\b/i.test((book && book.language) || '');
+
+  // Rewards, then the quiz, then `resume`. Returns true when reading paused
+  // for something; false means carry straight on.
+  function endOfChapter(ci, resume) {
+    const earned = Kids.on ? Kids.chapterDone(isAfrikaansBook()) : [];
+    if (!earned.length && !quizFor(ci)) return false;
+    pause();
+    render();
+    showStickers(earned, () => { if (!offerQuiz(ci, resume)) resume(); });
+    return true;
+  }
+
+  function endOfBook(ci, message) {
+    pause();
+    render();
+    const earned = Kids.on ? [...Kids.chapterDone(isAfrikaansBook()), ...Kids.bookDone(bookKey)] : [];
+    const done = () => {
+      showStatus(message, false, 6000);
+      if (Kids.on) Kids.confetti(60);
+    };
+    showStickers(earned, () => { if (!offerQuiz(ci, done)) done(); });
+  }
+
+  // ---------- Kids' mode ----------
+
+  // New stickers one after another, each with confetti; then `then`.
+  function showStickers(list, then = () => {}) {
+    if (!list.length) { then(); return; }
+    const [s, ...rest] = list;
+    const pop = document.createElement('div');
+    pop.className = 'sticker-pop';
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', t('New sticker!'));
+    const card = document.createElement('div');
+    card.className = 'card';
+    const em = Object.assign(document.createElement('span'), { className: 'em', textContent: s.emoji });
+    const eyebrow = Object.assign(document.createElement('p'), { className: 'eyebrow', textContent: t('New sticker!') });
+    const name = Object.assign(document.createElement('h3'), { textContent: t(s.name) });
+    const how = Object.assign(document.createElement('p'), { textContent: t(s.how) });
+    const ok = Object.assign(document.createElement('button'), { type: 'button', className: 'btn primary big', textContent: t('Yay!') });
+    card.append(em, eyebrow, name, how, ok);
+    pop.append(card);
+    document.body.append(pop);
+    Kids.confetti();
+    ok.focus();
+    ok.addEventListener('click', () => { pop.remove(); showStickers(rest, then); });
+  }
+
+  const awardAndShow = (earned) => { if (earned.length) showStickers(earned); };
+
+  function renderKidsHome() {
+    if (!Kids.on) return;
+    const name = Kids.state.childName;
+    const b = Kids.buddy();
+    $('greeting').textContent = name ? t('Hello, {name}!', { name }) : t('Hello, reader!');
+    const face = $('buddyFace');
+    face.textContent = b.face;
+    if (b.extra) face.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: b.extra }));
+    $('buddyTitle').textContent = t('{buddy} is {stage}', { buddy: b.name, stage: t(b.label) });
+    $('buddyText').textContent = b.last
+      ? t('{buddy} is all grown up. Keep reading to keep them happy!', { buddy: b.name })
+      : t('Read {n} more minutes and {buddy} will grow!', { n: b.toNext, buddy: b.name });
+    $('buddyBar').style.width = `${Math.round(b.progress * 100)}%`;
+    const today = Math.floor(Kids.minutesToday());
+    const streak = Kids.streak();
+    $('buddyToday').textContent = `${plural(today, 'You read {n} minute today', 'You read {n} minutes today')}${streak > 1 ? ` · ${plural(streak, '{n} day in a row', '{n} days in a row')} 🔥` : ''}`;
+
+    const grid = $('stickerGrid');
+    grid.replaceChildren();
+    let got = 0;
+    for (const st of Kids.STICKERS) {
+      const has = !!Kids.state.stickers[st.id];
+      if (has) got++;
+      const item = document.createElement('div');
+      item.className = `sticker ${has ? 'got' : 'locked'}`;
+      item.setAttribute('role', 'listitem');
+      item.title = t(st.how);
+      item.append(
+        Object.assign(document.createElement('span'), { className: 'em', textContent: st.emoji }),
+        Object.assign(document.createElement('span'), { className: 'nm', textContent: has ? t(st.name) : '?' }),
+        Object.assign(document.createElement('span'), { className: 'hw', textContent: t(st.how) }),
+      );
+      grid.append(item);
+    }
+    $('stickerCount').textContent = t('{got} of {total}', { got, total: Kids.STICKERS.length });
+  }
+
+  // The reading map on the nightstand card.
+  function renderMap(b) {
+    if (!Kids.on || !b) return;
+    const p = progressOf(b);
+    const m = b.mark;
+    const stops = [];
+    if (m && m.total && b.key === bookKey && book) {
+      for (const ch of book.chapters.slice(1)) stops.push(ch.start / m.total);
+    }
+    const place = Kids.renderMap($('readingMap'), b.key, p.pct, stops, Kids.buddy().face);
+    $('mapText').textContent = p.finished
+      ? t('You made it to {place}! 🎉', { place: t(place.name) })
+      : p.started
+        ? t('You’ve walked {pct}% of the way to {place}!', { pct: p.pct, place: t(place.name) })
+        : t('Off we go to {place}!', { place: t(place.name) });
+  }
+
+  // ---- Tap a word to hear it.
+  function sayWord(i) {
+    const w = book.words[i];
+    if (!Storytime.say(w, { voiceURI: settings.voiceURI, lang: book.language, rate: 0.85 })) return;
+    const span = $('pacerText').querySelector(`[data-i="${i}"]`);
+    if (span) { span.classList.add('said'); setTimeout(() => span.classList.remove('said'), 1200); }
+  }
+
+  // ---- Reading time: a minute counts while reading is active (playing, or
+  // turning pages / tapping in the last minute).
+  let lastActive = 0;
+  for (const tEv of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(tEv, () => { lastActive = Date.now(); }, { passive: true });
+  $('pacerStage').addEventListener('scroll', () => { lastActive = Date.now(); }, { passive: true });
+  const TICK = 15000;
+  setInterval(() => {
+    if (!Kids.on || !book || $('reader').hidden || document.hidden) return;
+    if (!playing && Date.now() - lastActive > 60000) return;
+    const before = Kids.buddy().stage;
+    Kids.addTime(TICK);
+    const earned = Kids.check('time');
+    if (Kids.buddy().stage > before) earned.unshift({ emoji: Kids.buddy().face, name: 'Your buddy grew!', how: 'Keep reading to help it grow even more.' });
+    if (earned.length) { if (playing) pause(); showStickers(earned); }
+  }, TICK);
+
+  // ---- Read together: child and grown-up take turns, paragraph by paragraph.
+  let turnPara = null;
+
+  // Paragraph [start, end] around word i; very short ones (headings) join the next.
+  function paragraphAt(i) {
+    let s = i;
+    while (s > 0 && !book.paraEnd[s - 1]) s--;
+    let e = i;
+    while (e < book.words.length - 1 && (!book.paraEnd[e] || e - s < 3)) e++;
+    return [s, e];
+  }
+
+  function turnIndex(start) {
+    const ci = chapterAt(start);
+    let n = 0;
+    for (let i = book.chapters[ci].start; i < start; i++) if (book.paraEnd[i] && i - (paragraphAt(i)[0]) >= 3) n++;
+    return n;
+  }
+
+  function renderTogether(ci) {
+    if (ci !== pacerChapter) buildPacer(ci);
+    clearPacerHighlight();
+    $('pacerText').querySelectorAll('.turn-child, .turn-adult').forEach((p) => p.classList.remove('turn-child', 'turn-adult'));
+    const [s, e] = paragraphAt(pos);
+    turnPara = [s, e];
+    const child = turnIndex(s) % 2 === 0;
+    const base = book.chapters[ci].start;
+    const paras = new Set();
+    for (let i = s; i <= e; i++) { const sp = pacerSpans[i - base]; if (sp) paras.add(sp.parentElement); }
+    paras.forEach((p) => p.classList.add(child ? 'turn-child' : 'turn-adult'));
+    const first = [...paras][0];
+    if (first) {
+      const stage = $('pacerStage');
+      stage.scrollTo({ top: stage.scrollTop + first.getBoundingClientRect().top - stage.getBoundingClientRect().top - 40, behavior: 'smooth' });
+    }
+    const kid = Kids.state.childName || t('you');
+    const grown = Kids.state.adultName || t('the grown-up');
+    $('turnCard').classList.toggle('adult', !child);
+    $('turnFace').textContent = child ? '🧒' : '🧑';
+    $('turnWho').textContent = child ? t('Your turn, {name}!', { name: kid }) : t('{name}’s turn!', { name: grown });
+    $('turnHint').textContent = child ? t('Read the orange part out loud.') : t('Listen while {name} reads the blue part.', { name: grown });
+  }
+
+  function nextTurn(dir = 1) {
+    if (!turnPara) return;
+    if (dir < 0) {
+      if (turnPara[0] > 0) seek(paragraphAt(turnPara[0] - 1)[0]);
+      return;
+    }
+    const next = turnPara[1] + 1;
+    awardAndShow(Kids.togetherTurn());
+    if (next >= book.words.length) { endOfBook(chapterAt(turnPara[0]), t('You finished “{title}”. Well read!', { title: book.title })); return; }
+    const ci = chapterAt(turnPara[0]);
+    if (chapterAt(next) !== ci) {
+      const go = () => seek(next);
+      if (!endOfChapter(ci, go)) go();
+      return;
+    }
+    seek(next);
+  }
+  $('turnDone').addEventListener('click', () => nextTurn(1));
+
+  // ---- Word jar: words looked up while reading.
+  function sentenceAround(i) {
+    const s = sentenceStart(i);
+    let e = i;
+    while (e < book.words.length - 1 && !isBreak(e) && e - s < 30) e++;
+    return book.words.slice(s, e + 1).join(' ');
+  }
+
+  function rememberWord(i, meaning) {
+    const word = Dictionary.clean(book.words[i]) || book.words[i];
+    const r = Kids.addWord({ word, meaning: meaning || '', sentence: sentenceAround(i), book: book.title, lang: book.language || '' });
+    if (r.added) showStatus(t('“{word}” went into your word jar 🫙', { word }), false, 3000);
+    awardAndShow(r.earned);
+  }
+
+  function renderJar() {
+    const list = Kids.words();
+    $('wordJar').hidden = !list.length;
+    $('playMatch').hidden = list.length < 4;
+    const jar = $('jarWords');
+    jar.replaceChildren(...list.slice(0, 60).map((w) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'jar-word';
+      b.setAttribute('role', 'listitem');
+      b.textContent = w.word;
+      b.addEventListener('click', () => openWord(w));
+      return b;
+    }));
+  }
+
+  const wordSheet = $('wordSheet');
+  let openWordEntry = null;
+  function openWord(w) {
+    openWordEntry = w;
+    $('wordTitle').textContent = w.word;
+    $('wordMeaning').textContent = w.meaning || t('No meaning saved yet. Ask a grown-up what it means!');
+    $('wordSentence').textContent = w.sentence ? `“${w.sentence}”` : '';
+    $('wordFrom').textContent = w.book ? t('From {book}', { book: w.book }) : '';
+    wordSheet.showModal();
+  }
+  $('wordSay').addEventListener('click', () => {
+    if (openWordEntry) Storytime.say(openWordEntry.word, { voiceURI: settings.voiceURI, lang: openWordEntry.lang, rate: 0.8 });
+  });
+  $('wordRemove').addEventListener('click', () => {
+    if (!openWordEntry) return;
+    Kids.removeWord(openWordEntry.word);
+    wordSheet.close();
+    renderJar();
+  });
+
+  // ---- Word match: pick the jar word that fits the clue.
+  const matchSheet = $('matchSheet');
+  let match = null;
+  function startMatch() {
+    const list = Kids.words();
+    if (list.length < 4) return;
+    const rounds = list.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(5, list.length));
+    match = { rounds, i: 0, stars: 0, all: list };
+    $('matchTitle').textContent = t('Which word fits?');
+    $('matchDots').replaceChildren(...rounds.map(() => document.createElement('span')));
+    renderMatch();
+    matchSheet.showModal();
+  }
+  function renderMatch() {
+    const r = match.rounds[match.i];
+    [...$('matchDots').children].forEach((d, k) => d.classList.toggle('done', k < match.i));
+    const body = $('matchBody');
+    const clue = document.createElement('p');
+    clue.className = 'quiz-text';
+    const blank = r.sentence ? r.sentence.replace(new RegExp(r.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '_____') : '';
+    clue.textContent = r.meaning ? `💡 ${r.meaning}` : `✏️ ${blank}`;
+    const others = match.all.filter((w) => w.word !== r.word).sort(() => Math.random() - 0.5).slice(0, 3).map((w) => w.word);
+    const choices = [r.word, ...others].sort(() => Math.random() - 0.5);
+    const box = document.createElement('div');
+    box.className = 'quiz-choices';
+    let tries = 0;
+    for (const c of choices) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'quiz-choice';
+      b.textContent = c;
+      b.addEventListener('click', () => {
+        tries++;
+        if (c !== r.word) { b.classList.add('tried'); b.disabled = true; fb.textContent = t('Oops, try again! 💪'); return; }
+        box.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+        b.classList.add('right');
+        if (tries === 1) match.stars++;
+        fb.textContent = t('Yay! 🎉');
+        Kids.confetti(18);
+        const last = match.i === match.rounds.length - 1;
+        const next = Object.assign(document.createElement('button'), { type: 'button', className: 'btn primary big', textContent: t(last ? 'See my stars' : 'Next word') });
+        next.addEventListener('click', () => { if (last) endMatch(); else { match.i++; renderMatch(); } });
+        $('matchActions').replaceChildren(next);
+        next.focus();
+      });
+      box.append(b);
+    }
+    const fb = Object.assign(document.createElement('p'), { className: 'quiz-feedback' });
+    body.replaceChildren(clue, box, fb);
+    $('matchActions').replaceChildren();
+  }
+  function endMatch() {
+    const { stars, rounds } = match;
+    const box = document.createElement('div');
+    box.className = 'quiz-score';
+    box.append(
+      Object.assign(document.createElement('div'), { className: 'quiz-stars', textContent: '⭐'.repeat(stars) + '☆'.repeat(rounds.length - stars) }),
+      Object.assign(document.createElement('p'), { textContent: plural(stars, 'You earned {n} star!', 'You earned {n} stars!') }),
+    );
+    $('matchBody').replaceChildren(box);
+    const done = Object.assign(document.createElement('button'), { type: 'button', className: 'btn primary big', textContent: t('Done') });
+    done.addEventListener('click', () => { matchSheet.close(); awardAndShow(Kids.check('game')); });
+    $('matchActions').replaceChildren(done);
+    Kids.confetti(40);
+  }
+  $('playMatch').addEventListener('click', startMatch);
+
+  // ---- The parent PIN pad. Resolves true when a grown-up got through.
+  const pinSheet = $('pinSheet');
+  let pinFlow = null;
+  function askPin({ title, help, check }) {
+    return new Promise((resolve) => {
+      pinFlow = { digits: '', title, help, check, resolve };
+      $('pinTitle').textContent = title;
+      $('pinHelp').textContent = help;
+      $('pinMsg').textContent = '';
+      $('pinMath').hidden = true;
+      $('pinPad').hidden = false;
+      $('pinForgot').hidden = !check;
+      renderPinDots();
+      pinSheet.showModal();
+    });
+  }
+  function renderPinDots() {
+    [...$('pinDots').children].forEach((d, k) => d.classList.toggle('on', k < pinFlow.digits.length));
+  }
+  async function pinDigit(k) {
+    if (!pinFlow) return;
+    if (k === 'back') pinFlow.digits = pinFlow.digits.slice(0, -1);
+    else if (pinFlow.digits.length < 4) pinFlow.digits += k;
+    renderPinDots();
+    if (pinFlow.digits.length < 4) return;
+    const entered = pinFlow.digits;
+    if (pinFlow.check) {
+      if (await Kids.checkPin(entered)) return closePin(true);
+      pinFlow.digits = '';
+      $('pinMsg').textContent = t('That’s not the PIN. Try again.');
+      renderPinDots();
+      return;
+    }
+    closePin(entered);
+  }
+  function closePin(result) {
+    const f = pinFlow;
+    pinFlow = null;
+    pinSheet.close();
+    if (f) f.resolve(result);
+  }
+  $('pinPad').addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) pinDigit(b.dataset.k); });
+  pinSheet.addEventListener('keydown', (e) => {
+    if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pinDigit(e.key); }
+    else if (e.key === 'Backspace') { e.preventDefault(); pinDigit('back'); }
+  });
+  // The close event arrives a moment later, possibly after the pad has
+  // reopened for the next step; only a real cancel ends the flow.
+  pinSheet.addEventListener('close', () => {
+    if (pinFlow && !pinSheet.open) { const f = pinFlow; pinFlow = null; f.resolve(null); }
+  });
+  // Forgot the PIN: a sum that's easy for grown-ups and hard for little ones.
+  let mathAnswer = 0;
+  $('pinForgot').addEventListener('click', () => {
+    const a = 23 + Math.floor(Math.random() * 60);
+    const b = 13 + Math.floor(Math.random() * 30);
+    mathAnswer = a * b;
+    $('pinMathQ').textContent = t('Grown-ups only: what is {a} × {b}?', { a, b });
+    $('pinMathAnswer').value = '';
+    $('pinPad').hidden = true;
+    $('pinMath').hidden = false;
+    $('pinMsg').textContent = '';
+    $('pinMathAnswer').focus();
+  });
+  $('pinMathGo').addEventListener('click', () => {
+    if (+$('pinMathAnswer').value === mathAnswer) closePin(true);
+    else $('pinMsg').textContent = t('Not quite. Ask a grown-up to help.');
+  });
+
+  async function chooseNewPin() {
+    const first = await askPin({ title: t('Choose a grown-up PIN'), help: t('Pick 4 numbers that only grown-ups know.'), check: false });
+    if (!first) return false;
+    const again = await askPin({ title: t('Type the PIN again'), help: t('Just to be sure.'), check: false });
+    if (!again) return false;
+    if (again !== first) { showStatus(t('The PINs didn’t match. Try again.'), true, 4000); return false; }
+    await Kids.setPin(first);
+    return true;
+  }
+
+  // ---- Switching kids' mode on and off.
+  function applyKids() {
+    document.body.classList.toggle('kids', Kids.on);
+    applyAppearance();
+    $('kidsToggle').textContent = t(Kids.on ? 'Turn kids’ mode off' : 'Turn kids’ mode on');
+    $('changePin').hidden = !Kids.hasPin();
+    $('childName').value = Kids.state.childName;
+    $('adultName').value = Kids.state.adultName;
+    if (!allowedModes().includes(settings.mode) && book) setMode(Kids.on ? Kids.state.mode || 'page' : 'pacer');
+    else if (!allowedModes().includes(settings.mode)) settings.mode = Kids.on ? 'page' : 'pacer';
+    renderHome();
+  }
+
+  $('kidsToggle').addEventListener('click', async () => {
+    if (Kids.on) {
+      Kids.on = false;
+      settings.mode = settings.adultMode || 'pacer';
+      saveSettings();
+      dialog.close();
+      applyKids();
+      return;
+    }
+    if (!Kids.hasPin() && !(await chooseNewPin())) return;
+    settings.adultMode = settings.mode;
+    settings.mode = 'page';
+    saveSettings();
+    Kids.on = true;
+    dialog.close();
+    applyKids();
+    showStatus(t('Kids’ mode is on. Settings now need the grown-up PIN.'), false, 5000);
+  });
+  $('changePin').addEventListener('click', async () => {
+    if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
+  });
+  for (const id of ['childName', 'adultName']) {
+    $(id).addEventListener('input', (e) => { Kids.state[id] = e.target.value.trim(); Kids.save(); });
+  }
 
   // ---------- Storytime ----------
 
@@ -881,15 +1360,12 @@
       rate: settings.storyRate,
       onChunk: (start, end) => {
         const ci = chapterAt(start);
-        if (ci !== storyChapter && quizFor(storyChapter)) {
+        if (ci !== storyChapter) {
           const finishedChapter = storyChapter;
-          pause();
+          storyChapter = ci;
           pos = start;
-          render();
-          offerQuiz(finishedChapter, play);
-          return;
+          if (finishedChapter >= 0 && endOfChapter(finishedChapter, play)) return;
         }
-        storyChapter = ci;
         storyChunk = [start, end];
         pos = start;
         render();
@@ -903,9 +1379,7 @@
       onDone: (reachedEnd, error) => {
         if (reachedEnd) {
           pos = book.words.length - 1;
-          pause();
-          const done = () => showStatus(t('That’s the end of “{title}”. Sweet dreams!', { title: book.title }), false, 6000);
-          if (!offerQuiz(chapterAt(pos), done)) done();
+          endOfBook(chapterAt(pos), t('That’s the end of “{title}”. Sweet dreams!', { title: book.title }));
         } else {
           pause();
           showStatus(t('The voice stopped ({error}). Press play to carry on.', { error: error || t('unknown error') }), true, 6000);
@@ -987,6 +1461,7 @@
     const ci = chapterAt(pos);
     if (settings.mode === 'rsvp') renderRsvp();
     else if (settings.mode === 'page') renderPage(ci);
+    else if (settings.mode === 'together') renderTogether(ci);
     else renderPacer(ci);
 
     if (ci !== lastChapter) {
@@ -1121,7 +1596,11 @@
     // Past the edge of a chapter, carry on into the next or previous one.
     if (dir > 0 && atEnd && ci < book.chapters.length - 1) {
       const next = () => seek(book.chapters[ci + 1].start);
-      if (!offerQuiz(ci, next)) next();
+      if (!endOfChapter(ci, next)) next();
+      return;
+    }
+    if (dir > 0 && atEnd && ci === book.chapters.length - 1) {
+      endOfBook(ci, t('You finished “{title}”. Well read!', { title: book.title }));
       return;
     }
     if (dir < 0 && atStart && ci > 0) return seek(book.chapters[ci - 1].start);
@@ -1195,11 +1674,14 @@
 
   function setMode(mode) {
     if (playing) pause();
+    if (!allowedModes().includes(mode)) mode = allowedModes()[0];
     settings.mode = mode;
+    if (Kids.on) { Kids.state.mode = mode; Kids.save(); }
     saveSettings();
+    $('turnCard').hidden = mode !== 'together';
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
-    if (mode === 'story' && !$('voiceTip').hidden && !settings.voiceTipShown) {
+    if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
       settings.voiceTipShown = true;
       saveSettings();
       showStatus(t('Tip: for a more natural voice, see Settings → Storytime.'), false, 6000);
@@ -1225,9 +1707,10 @@
   }
 
   function applyAppearance() {
-    if (settings.theme === 'auto') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.dataset.theme = settings.theme;
-    document.documentElement.style.setProperty('--scale', settings.fontSize / 100);
+    const theme = Kids.on ? 'kids' : settings.theme;
+    if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.dataset.theme = theme;
+    document.documentElement.style.setProperty('--scale', (Kids.on ? Math.max(settings.fontSize, 125) : settings.fontSize) / 100);
     $('fontSizeOut').textContent = `${settings.fontSize}%`;
     fill($('fontSize'));
   }
@@ -1286,7 +1769,13 @@
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
-  $('openSettings').addEventListener('click', () => { renderDataStatus(); renderOfflineStatus(); dialog.showModal(); });
+  $('openSettings').addEventListener('click', async () => {
+    if (Kids.on && !(await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to open Settings.'), check: true }))) return;
+    renderDataStatus();
+    renderOfflineStatus();
+    applyKids();
+    dialog.showModal();
+  });
 
   // ---------- Your data: protection from clean-up, backups ----------
 
@@ -1472,8 +1961,8 @@
 
   $('play').addEventListener('click', toggle);
   $('rsvpWord').parentElement.addEventListener('click', toggle);
-  $('back').addEventListener('click', () => (settings.mode === 'page' ? turnPage(-1) : seek(prevSentence())));
-  $('fwd').addEventListener('click', () => (settings.mode === 'page' ? turnPage(1) : seek(nextSentence())));
+  $('back').addEventListener('click', () => (settings.mode === 'page' ? turnPage(-1) : settings.mode === 'together' ? nextTurn(-1) : seek(prevSentence())));
+  $('fwd').addEventListener('click', () => (settings.mode === 'page' ? turnPage(1) : settings.mode === 'together' ? nextTurn(1) : seek(nextSentence())));
   $('prevChapter').addEventListener('click', () => {
     const ci = chapterAt(pos);
     gotoChapter(pos > book.chapters[ci].start + 20 ? ci : ci - 1);
@@ -1493,7 +1982,15 @@
   const jumpToWord = (e) => {
     if (!getSelection().isCollapsed) return;
     const s = e.target.closest('[data-i]');
-    if (s) seek(+s.dataset.i, { scroll: false });
+    if (!s) return;
+    if (Kids.on && e.currentTarget === $('pacerText')) {
+      if (playing) return;
+      // Read to me: start from the tapped word too.
+      if (settings.mode === 'story') seek(+s.dataset.i, { scroll: false });
+      sayWord(+s.dataset.i);
+      return;
+    }
+    seek(+s.dataset.i, { scroll: false });
   };
   $('rsvpContext').addEventListener('click', (e) => { e.stopPropagation(); jumpToWord(e); });
   $('pacerText').addEventListener('click', jumpToWord);
@@ -1647,6 +2144,8 @@
     $('defWord').textContent = word;
     $('defPhon').textContent = '';
     const afrikaans = /^af\b/i.test(book.language || '');
+    // Into the word jar straight away; the meaning follows when it arrives.
+    rememberWord(i, '');
     $('defMore').href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}${afrikaans ? '#Afrikaans' : ''}`;
     const body = $('defBody');
     const note = (text) => {
@@ -1667,6 +2166,8 @@
     let result;
     try {
       result = await Dictionary.define(raw);
+      const first = result && result.meanings[0] && result.meanings[0].definitions[0];
+      if (first) Kids.addWord({ word, meaning: first.definition });
     } catch {
       if (id !== lookupId) return;
       body.innerHTML = '';
@@ -1721,7 +2222,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
@@ -1733,8 +2234,8 @@
       ArrowDown: () => setWpm(settings.wpm - 25),
       '[': () => $('prevChapter').click(),
       ']': () => $('nextChapter').click(),
-      m: () => setMode(MODES[(MODES.indexOf(settings.mode) + 1) % MODES.length]),
-      M: () => setMode(MODES[(MODES.indexOf(settings.mode) + 1) % MODES.length]),
+      m: () => { const list = allowedModes(); setMode(list[(list.indexOf(settings.mode) + 1) % list.length]); },
+      M: () => { const list = allowedModes(); setMode(list[(list.indexOf(settings.mode) + 1) % list.length]); },
       d: () => lookUp(pos),
       D: () => lookUp(pos),
       Escape: pause,
@@ -1759,5 +2260,5 @@
 
   setWpm(settings.wpm);
   applyAppearance();
-  renderHome();
+  applyKids();
 })();
