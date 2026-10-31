@@ -11,6 +11,8 @@ Countdown to christmas
 - **Pacer**: a highlight moves through the chapter at your target speed, with optional Bionic bolding.
 - **Smart timing**: longer pauses at punctuation, paragraph ends, chapter breaks and long words, plus an ease-in after you press play.
 - 100–1200 wpm, chapter navigation, time remaining, themes, and your position in each book is remembered.
+- **Chapter quizzes** (optional): a short quiz at the end of each chapter, built from the chapter's own text (fill in a missing name, number or word; which moment came first), with a running average.
+- **Kids' mode (Kinderhoekie)**, locked behind a 4-digit parent PIN: a bright, rounded look with no speed reading; *Ek lees self* (I read), *Lees vir my* (read-along karaoke with tap-to-hear words) and *Lees saam* (child and grown-up take turns by paragraph); a sticker album; a reading-buddy owl that grows with minutes read; a reading map for each book; gentle quizzes with stars and "try again"; and a word jar with a word-match game.
 - **Works offline and installs like an app**: a service worker keeps the app's files on the device, and the web app manifest lets it be installed (Chrome/Edge/Android) or added to the iPhone Home Screen.
 
 Shortcuts: `Space` play/pause, `←`/`→` sentence, `↑`/`↓` speed, `[`/`]` chapter, `M` switch mode.

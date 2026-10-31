@@ -43,7 +43,7 @@ const Backup = (() => {
 
   // Keep the fuller record of each day, and every session and finished book.
   function mergeJournal(mine, theirs) {
-    const out = { days: { ...mine.days }, finished: { ...theirs.finished, ...mine.finished }, sessions: [] };
+    const out = { days: { ...mine.days }, finished: { ...theirs.finished, ...mine.finished }, sessions: [], quizzes: [] };
     for (const [k, e] of Object.entries(theirs.days || {})) {
       if (!out.days[k] || e.ms > out.days[k].ms) out.days[k] = e;
     }
@@ -54,6 +54,13 @@ const Backup = (() => {
       out.sessions.push(s);
     }
     out.sessions.sort((a, b) => a.at - b.at);
+    const seenQuiz = new Set();
+    for (const q of [...(mine.quizzes || []), ...(theirs.quizzes || [])]) {
+      if (seenQuiz.has(q.at)) continue;
+      seenQuiz.add(q.at);
+      out.quizzes.push(q);
+    }
+    out.quizzes.sort((a, b) => a.at - b.at);
     return out;
   }
 

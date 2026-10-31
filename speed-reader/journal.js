@@ -14,9 +14,9 @@ const Journal = (() => {
   const load = () => {
     try {
       const j = JSON.parse(localStorage.getItem(KEY));
-      if (j && j.days) return { finished: {}, sessions: [], ...j };
+      if (j && j.days) return { finished: {}, sessions: [], quizzes: [], ...j };
     } catch { /* fall through */ }
-    return { days: {}, finished: {}, sessions: [] };
+    return { days: {}, finished: {}, sessions: [], quizzes: [] };
   };
   const save = (j) => {
     try { localStorage.setItem(KEY, JSON.stringify(j)); } catch { /* storage unavailable */ }
@@ -63,6 +63,22 @@ const Journal = (() => {
     if (!since) return;
     words += n;
     if (Date.now() - since > 30000) flush(true);
+  }
+
+  // Chapter quiz results, for the running average shown after each quiz.
+  function quiz(key, chapter, right, total) {
+    const j = load();
+    j.quizzes.push({ key, chapter, right, total, at: Date.now() });
+    if (j.quizzes.length > 500) j.quizzes.splice(0, j.quizzes.length - 500);
+    save(j);
+  }
+
+  function quizStats() {
+    const q = load().quizzes;
+    let right = 0;
+    let total = 0;
+    for (const r of q) { right += r.right; total += r.total; }
+    return { count: q.length, pct: total ? Math.round((right / total) * 100) : 0 };
   }
 
   function finished(key, title) {
@@ -338,5 +354,5 @@ const Journal = (() => {
     });
   }
 
-  return { start, flush, addWords, finished, stats, render };
+  return { start, flush, addWords, finished, quiz, quizStats, stats, render };
 })();
