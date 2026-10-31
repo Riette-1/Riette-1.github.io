@@ -19,13 +19,13 @@ const Backup = (() => {
   // Phones get the share sheet (save to Files, email, WhatsApp...); computers
   // get an ordinary download.
   async function save() {
-    const name = `nook-backup-${today()}.json`;
+    const name = `boekhoek-backup-${today()}.json`;
     const text = JSON.stringify(collect());
     const file = new File([text], name, { type: 'application/json' });
     const phone = /iPhone|iPad|iPod|Android/.test(navigator.userAgent);
     if (phone && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'Nook backup' });
+        await navigator.share({ files: [file], title: 'Boekhoek backup' });
         return 'shared';
       } catch (err) {
         if (err && err.name === 'AbortError') return 'cancelled';
@@ -59,7 +59,7 @@ const Backup = (() => {
 
   async function restore(file) {
     const json = parse(await file.text(), null);
-    if (!json || json.app !== 'nook' || !json.data) throw new Error('This file isn’t a Nook backup.');
+    if (!json || json.app !== 'nook' || !json.data) throw new Error('This file isn’t a Boekhoek backup.');
     const summary = { days: 0, sessions: 0, bookmarks: 0 };
     for (const [k, v] of Object.entries(json.data)) {
       if (!k.startsWith(PREFIX)) continue;

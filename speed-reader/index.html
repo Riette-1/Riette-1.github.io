@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <meta name="darkreader-lock" />
   <meta name="author" content="Riëtte" />
-  <title>Nook · Read Faster</title>
-  <meta name="description" content="Nook: read faster, from your favourite corner. A speed reader for your EPUB books that keeps everything on your device." />
-  <meta name="application-name" content="Nook" />
-  <meta name="apple-mobile-web-app-title" content="Nook" />
+  <title>Boekhoek · Lees vinniger</title>
+  <meta name="description" content="Boekhoek: lees vinniger, uit jou gunstelinghoekie. ’n Spoedleser vir jou EPUB-boeke wat alles op jou toestel hou." />
+  <meta name="application-name" content="Boekhoek" />
+  <meta name="apple-mobile-web-app-title" content="Boekhoek" />
   <meta name="theme-color" content="#7c3aed" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,14 +18,15 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=18" />
-  <script src="epub.js?v=18" defer></script>
-  <script src="library.js?v=18" defer></script>
-  <script src="journal.js?v=18" defer></script>
-  <script src="dictionary.js?v=18" defer></script>
-  <script src="storytime.js?v=18" defer></script>
-  <script src="backup.js?v=18" defer></script>
-  <script src="app.js?v=18" defer></script>
+  <link rel="stylesheet" href="style.css?v=20" />
+  <script src="i18n.js?v=20" defer></script>
+  <script src="epub.js?v=20" defer></script>
+  <script src="library.js?v=20" defer></script>
+  <script src="journal.js?v=20" defer></script>
+  <script src="dictionary.js?v=20" defer></script>
+  <script src="storytime.js?v=20" defer></script>
+  <script src="backup.js?v=20" defer></script>
+  <script src="app.js?v=20" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -53,35 +54,35 @@
   </svg>
 
   <header class="topbar">
-    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="20" height="20"><use href="#i-nook"/></svg></span><span class="brand-name">Nook</span></div>
+    <div class="brand" id="brand" title="Back to your reading nook"><span class="logo"><svg width="20" height="20"><use href="#i-nook"/></svg></span><span class="brand-name">Boekhoek</span></div>
     <div class="book-info" id="bookInfo">
       <div class="book-title" id="bookTitle"></div>
       <div class="book-sub" id="bookSub"></div>
     </div>
-    <span class="awake" id="awakeBadge" hidden title="The screen won't dim or lock while you read"><svg class="ic" width="20" height="20"><use href="#i-sun"/></svg><span class="lbl">Screen on</span></span>
-    <button class="btn ghost" id="goHome" title="Back to your reading nook"><svg class="ic" width="20" height="20"><use href="#i-home"/></svg><span class="lbl">Reading nook</span></button>
+    <span class="awake" id="awakeBadge" hidden title="The screen won't dim or lock while you read"><svg class="ic" width="20" height="20"><use href="#i-sun"/></svg><span class="lbl" data-i18n="Screen on">Screen on</span></span>
+    <button class="btn ghost" id="goHome" title="Back to your reading nook"><svg class="ic" width="20" height="20"><use href="#i-home"/></svg><span class="lbl" data-i18n="Reading nook">Reading nook</span></button>
     <button class="btn ghost icon-only" id="openSettings" title="Settings" aria-label="Settings"><svg class="ic" width="20" height="20"><use href="#i-gear"/></svg></button>
     <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden />
   </header>
 
   <main id="welcome" class="welcome">
     <section class="nightstand" id="nightstand" hidden>
-      <h1 class="greeting" id="greeting">Welcome back</h1>
-      <p class="greeting-sub">Your book is right where you left it.</p>
+      <h1 class="greeting" id="greeting" data-i18n="Welcome back">Welcome back</h1>
+      <p class="greeting-sub" data-i18n="Your book is right where you left it.">Your book is right where you left it.</p>
       <div class="ns-card">
         <div class="ns-cover" aria-hidden="true">
           <div class="ns-fallback" id="nsFallback"><span id="nsFallbackTitle"></span></div>
           <img id="nsCover" alt="" hidden />
         </div>
         <div class="ns-body">
-          <p class="eyebrow">On your nightstand</p>
+          <p class="eyebrow" data-i18n="On your nightstand">On your nightstand</p>
           <h2 id="nsTitle"></h2>
           <p class="ns-author" id="nsAuthor"></p>
           <div class="ns-progress"><div class="ns-bar"><span id="nsBar"></span></div><span id="nsPct"></span></div>
           <p class="ns-where" id="nsWhere"></p>
           <div class="ns-actions">
-            <button class="btn primary big" id="nsContinue"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="nsContinueLabel">Open to my bookmark</span></button>
-            <button class="btn link" id="nsPlan">How long will it take?</button>
+            <button class="btn primary big" id="nsContinue"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="nsContinueLabel" data-i18n="Open to my bookmark">Open to my bookmark</span></button>
+            <button class="btn link" id="nsPlan" data-i18n="How long will it take?">How long will it take?</button>
           </div>
         </div>
       </div>
@@ -90,107 +91,107 @@
     <section class="hero" id="hero">
       <div class="dropzone" id="dropzone">
         <div class="hero-icon"><svg width="38" height="38"><use href="#i-nook"/></svg></div>
-        <h1>Welcome to Nook</h1>
-        <p class="tagline">Read faster, from your favourite corner.</p>
-        <p>Your bookshelf is empty. Add an <strong>.epub</strong> to get started. Books stay on this device and are never uploaded.</p>
-        <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg>Put a book on the shelf</label>
-        <p class="hint">or drop an EPUB here</p>
+        <h1 data-i18n-html="welcome"></h1>
+        <p class="tagline" data-i18n="Read faster, from your favourite corner.">Read faster, from your favourite corner.</p>
+        <p data-i18n-html="emptyShelf"></p>
+        <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg><span data-i18n="Put a book on the shelf">Put a book on the shelf</span></label>
+        <p class="hint" data-i18n="or drop an EPUB here">or drop an EPUB here</p>
       </div>
     </section>
 
     <section class="shelf" id="shelf" hidden aria-labelledby="shelfHeading">
       <div class="section-head">
-        <h2 id="shelfHeading">Your bookshelf</h2>
+        <h2 id="shelfHeading" data-i18n="Your bookshelf">Your bookshelf</h2>
         <span class="section-note" id="shelfCount"></span>
       </div>
       <div class="shelf-grid" id="shelfGrid" role="list"></div>
-      <p class="section-foot">Drop an EPUB anywhere on this page to add it.</p>
+      <p class="section-foot" data-i18n="Drop an EPUB anywhere on this page to add it.">Drop an EPUB anywhere on this page to add it.</p>
     </section>
 
     <section class="journal" id="journal" hidden aria-labelledby="journalHeading">
       <div class="section-head">
-        <h2 id="journalHeading">Reading journal</h2>
-        <span class="section-note">Time counted while a book is playing</span>
+        <h2 id="journalHeading" data-i18n="Reading journal">Reading journal</h2>
+        <span class="section-note" data-i18n="Time counted while a book is playing">Time counted while a book is playing</span>
       </div>
       <div class="tiles">
-        <div class="tile"><span class="tile-value" id="jToday">0 min</span><span class="tile-label">read today</span></div>
-        <div class="tile"><span class="tile-value" id="jStreak">0</span><span class="tile-label">day streak</span></div>
-        <div class="tile"><span class="tile-value" id="jWeek">0 min</span><span class="tile-label">read this week</span></div>
-        <div class="tile"><span class="tile-value" id="jWords">0</span><span class="tile-label">words this week</span></div>
-        <div class="tile"><span class="tile-value" id="jFinished">0</span><span class="tile-label" id="jFinishedLabel">books finished</span></div>
+        <div class="tile"><span class="tile-value" id="jToday">0 min</span><span class="tile-label" data-i18n="read today">read today</span></div>
+        <div class="tile"><span class="tile-value" id="jStreak">0</span><span class="tile-label" id="jStreakLabel" data-i18n="day streak">day streak</span></div>
+        <div class="tile"><span class="tile-value" id="jWeek">0 min</span><span class="tile-label" data-i18n="read this week">read this week</span></div>
+        <div class="tile"><span class="tile-value" id="jWords">0</span><span class="tile-label" data-i18n="words this week">words this week</span></div>
+        <div class="tile"><span class="tile-value" id="jFinished">0</span><span class="tile-label" id="jFinishedLabel" data-i18n="books finished">books finished</span></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Minutes read · last 14 days</div>
+        <div class="chart-title" data-i18n="Minutes read · last 14 days">Minutes read · last 14 days</div>
         <div class="chart">
           <span class="chart-max" id="jMax"></span>
           <div class="bars" id="jBars" role="list" aria-label="Minutes read per day, last 14 days"></div>
-          <p class="chart-empty" id="jEmpty">Press play on a book and your reading time will be written here.</p>
+          <p class="chart-empty" id="jEmpty" data-i18n="Press play on a book and your reading time will be written here.">Press play on a book and your reading time will be written here.</p>
           <div class="chart-tip" id="jTip" hidden></div>
         </div>
         <div class="bar-axis" id="jAxis" aria-hidden="true"></div>
       </div>
       <div class="chart-card pace-card">
-        <div class="chart-title">Reading pace</div>
+        <div class="chart-title" data-i18n="Reading pace">Reading pace</div>
         <div class="pace-stats">
-          <div class="pace-stat"><span class="pace-value" id="pAvg">–</span><span class="tile-label">average, wpm</span></div>
-          <div class="pace-stat"><span class="pace-value" id="pBest">–</span><span class="tile-label" id="pBestLabel">best session, wpm</span><span class="pace-sub" id="pBestWhen"></span></div>
-          <div class="pace-stat"><span class="pace-value" id="pChange">–</span><span class="tile-label">wpm since your first week</span><span class="pace-sub" id="pChangeWhen"></span></div>
+          <div class="pace-stat"><span class="pace-value" id="pAvg">–</span><span class="tile-label" data-i18n="average, wpm">average, wpm</span></div>
+          <div class="pace-stat"><span class="pace-value" id="pBest">–</span><span class="tile-label" id="pBestLabel" data-i18n="best session, wpm">best session, wpm</span><span class="pace-sub" id="pBestWhen"></span></div>
+          <div class="pace-stat"><span class="pace-value" id="pChange">–</span><span class="tile-label" data-i18n="wpm since your first week">wpm since your first week</span><span class="pace-sub" id="pChangeWhen"></span></div>
         </div>
         <div class="pace-plot">
           <div class="pace-chart" id="pChart"></div>
-          <p class="chart-empty" id="pEmpty">Read for a minute or more and your pace will appear here.</p>
+          <p class="chart-empty" id="pEmpty" data-i18n="Read for a minute or more and your pace will appear here.">Read for a minute or more and your pace will appear here.</p>
           <div class="chart-tip" id="pTip" hidden></div>
         </div>
-        <p class="pace-note">Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.</p>
+        <p class="pace-note" data-i18n="Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.">Real pace is the words you actually read per minute, pauses at punctuation included, so it runs a little below your speed setting.</p>
       </div>
     </section>
     <section class="techniques" id="techniques">
       <article>
-        <div class="demo flash-demo">re<span>a</span>ding</div>
-        <h2>Flash</h2>
-        <p>One word at a time in a fixed spot, so your eyes never have to travel. The red letter marks where your eye naturally locks on.</p>
+        <div class="demo flash-demo" data-i18n-html="demoFlash"></div>
+        <h2 data-i18n="Flash">Flash</h2>
+        <p data-i18n="One word at a time in a fixed spot, so your eyes never have to travel. The red letter marks where your eye naturally locks on.">One word at a time in a fixed spot, so your eyes never have to travel. The red letter marks where your eye naturally locks on.</p>
       </article>
       <article>
-        <div class="demo pacer-demo">read <span>along</span> with it</div>
-        <h2>Pacer</h2>
-        <p>A highlight sweeps through the page at your speed, like running a finger under the line, so you don't drift back.</p>
+        <div class="demo pacer-demo" data-i18n-html="demoPacer"></div>
+        <h2 data-i18n="Pacer">Pacer</h2>
+        <p data-i18n="A highlight sweeps through the page at your speed, like running a finger under the line, so you don't drift back.">A highlight sweeps through the page at your speed, like running a finger under the line, so you don't drift back.</p>
       </article>
       <article>
-        <div class="demo timing-demo">pause<span>,</span> breathe<span>.</span></div>
-        <h2>Smart timing</h2>
-        <p>Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.</p>
+        <div class="demo timing-demo" data-i18n-html="demoTiming"></div>
+        <h2 data-i18n="Smart timing">Smart timing</h2>
+        <p data-i18n="Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.">Slightly longer pauses at commas, sentence ends, paragraphs and long words keep comprehension up.</p>
       </article>
     </section>
 
     <section class="install-card" id="installCard" hidden aria-labelledby="installTitle">
       <img class="install-icon" src="icons/icon-192.png" alt="" width="64" height="64" />
       <div class="install-body">
-        <h2 id="installTitle">Get the Nook app</h2>
-        <p id="installText">Install Nook on this device. It opens full-screen from your home screen and works without internet.</p>
+        <h2 id="installTitle" data-i18n-html="installTitle"></h2>
+        <p id="installText" data-i18n="Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.">Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.</p>
         <ol class="install-steps" id="installSteps" hidden>
-          <li>Tap the <strong>Share</strong> button <svg class="ic" width="16" height="16" aria-label="Share"><use href="#i-share"/></svg> in Safari’s toolbar.</li>
-          <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
+          <li data-i18n-html="installStep1"></li>
+          <li data-i18n-html="installStep2"></li>
         </ol>
         <div class="install-actions">
-          <button type="button" class="btn primary" id="installBtn" hidden>Install Nook</button>
-          <button type="button" class="btn link" id="installDismiss">Not now</button>
+          <button type="button" class="btn primary" id="installBtn" hidden data-i18n="Install Boekhoek">Install Boekhoek</button>
+          <button type="button" class="btn link" id="installDismiss" data-i18n="Not now">Not now</button>
         </div>
       </div>
     </section>
 
     <footer class="credit">
       <span class="credit-mark"><svg width="16" height="16"><use href="#i-nook"/></svg></span>
-      <span><strong>Nook</strong> · Created by <strong>Riëtte</strong></span>
+      <span data-i18n-html="credit"></span>
     </footer>
   </main>
 
   <main id="reader" class="reader" hidden>
     <div class="mode-bar fade-when-playing">
       <div class="segmented" role="tablist" aria-label="Reading mode">
-        <button role="tab" class="tab" data-mode="pacer" aria-selected="true">Pacer</button>
-        <button role="tab" class="tab" data-mode="rsvp" aria-selected="false">Flash</button>
-        <button role="tab" class="tab" data-mode="page" aria-selected="false">Page</button>
-        <button role="tab" class="tab" data-mode="story" aria-selected="false">Storytime</button>
+        <button role="tab" class="tab" data-mode="pacer" aria-selected="true" data-i18n="Pacer">Pacer</button>
+        <button role="tab" class="tab" data-mode="rsvp" aria-selected="false" data-i18n="Flash">Flash</button>
+        <button role="tab" class="tab" data-mode="page" aria-selected="false" data-i18n="Page">Page</button>
+        <button role="tab" class="tab" data-mode="story" aria-selected="false" data-i18n="Storytime">Storytime</button>
       </div>
       <select id="chapterSelect" aria-label="Chapter"></select>
     </div>
@@ -204,7 +205,7 @@
         <div class="guide bottom"></div>
       </div>
       <p class="context" id="rsvpContext"></p>
-      <p class="tap-hint" id="tapHint">Tap to play · select words below to look them up or share</p>
+      <p class="tap-hint" id="tapHint" data-i18n="Tap to play · select words below to look them up or share">Tap to play · select words below to look them up or share</p>
     </div>
 
     <div id="pacerStage" class="stage pacer" hidden>
@@ -223,7 +224,7 @@
         <input type="range" class="range" id="progress" min="0" max="0" value="0" aria-label="Position in book" />
       </div>
       <div class="control-row">
-        <div class="speed fade-when-playing">
+        <div class="speed">
           <button class="btn round sm" id="slower" title="Slower (↓)" aria-label="Slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
           <div class="speed-value"><output id="wpmOut">300</output><span>wpm</span></div>
           <button class="btn round sm" id="faster" title="Faster (↑)" aria-label="Faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>
@@ -236,9 +237,9 @@
           <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic" width="20" height="20"><use href="#i-fwd"/></svg></button>
           <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic" width="20" height="20"><use href="#i-next"/></svg></button>
         </div>
-        <div class="story-controls fade-when-playing" id="storyControls">
+        <div class="story-controls" id="storyControls">
           <button class="btn round sm" id="storySlower" title="Speak slower" aria-label="Speak slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
-          <div class="speed-value"><output id="storyRateOut">1.0×</output><span>voice</span></div>
+          <div class="speed-value"><output id="storyRateOut">1.0×</output><span data-i18n="voice">voice</span></div>
           <button class="btn round sm" id="storyFaster" title="Speak faster" aria-label="Speak faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>
           <select id="storyVoice" aria-label="Voice"></select>
         </div>
@@ -253,18 +254,18 @@
       <button class="btn round sm ghost" id="defClose" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
     </div>
     <div class="def-body" id="defBody"></div>
-    <p class="def-src">From the <a href="https://dictionaryapi.dev/" target="_blank" rel="noopener">Free Dictionary</a> · <a id="defMore" target="_blank" rel="noopener">More on Wiktionary</a></p>
+    <p class="def-src"><span data-i18n-html="defSource"></span> · <a id="defMore" target="_blank" rel="noopener" data-i18n="More on Wiktionary">More on Wiktionary</a></p>
   </div>
 
   <div class="sel-bar" id="selBar" role="toolbar" aria-label="Selected text" hidden>
-    <button type="button" id="selDefine"><svg class="ic" width="20" height="20"><use href="#i-search"/></svg>Look up</button>
-    <button type="button" id="selShare"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg>Share quote</button>
+    <button type="button" id="selDefine"><svg class="ic" width="20" height="20"><use href="#i-search"/></svg><span data-i18n="Look up">Look up</span></button>
+    <button type="button" id="selShare"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg><span data-i18n="Share quote">Share quote</span></button>
   </div>
 
   <dialog id="shareSheet" class="sheet share-sheet" aria-labelledby="shareTitle">
     <form method="dialog">
       <div class="sheet-head">
-        <h2 id="shareTitle">Share a quote</h2>
+        <h2 id="shareTitle" data-i18n="Share a quote">Share a quote</h2>
         <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
       </div>
       <figure class="quote-card">
@@ -272,13 +273,13 @@
         <figcaption id="shareSource"></figcaption>
       </figure>
       <p class="share-note" id="shareNote"></p>
-      <label class="field-label" for="shareCaption">Add a caption</label>
+      <label class="field-label" for="shareCaption" data-i18n="Add a caption">Add a caption</label>
       <textarea id="shareCaption" rows="3" maxlength="500" placeholder="This line made me think of you…"></textarea>
-      <label class="toggle"><span><strong>Include the book’s title</strong><small>Adds the title and author under the quote</small></span><input type="checkbox" id="shareSourceToggle" checked /></label>
+      <label class="toggle"><span><strong data-i18n="Include the book’s title">Include the book’s title</strong><small data-i18n="Adds the title and author under the quote">Adds the title and author under the quote</small></span><input type="checkbox" id="shareSourceToggle" checked /></label>
       <div class="share-actions">
-        <button type="button" class="btn whatsapp big" id="shareWhatsApp"><svg class="ic" width="20" height="20"><use href="#i-chat"/></svg>Send on WhatsApp</button>
-        <button type="button" class="btn secondary" id="shareOther"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg>Other apps</button>
-        <button type="button" class="btn link" id="shareCopy">Copy text</button>
+        <button type="button" class="btn whatsapp big" id="shareWhatsApp"><svg class="ic" width="20" height="20"><use href="#i-chat"/></svg><span data-i18n="Send on WhatsApp">Send on WhatsApp</span></button>
+        <button type="button" class="btn secondary" id="shareOther"><svg class="ic" width="20" height="20"><use href="#i-share"/></svg><span data-i18n="Other apps">Other apps</span></button>
+        <button type="button" class="btn link" id="shareCopy" data-i18n="Copy text">Copy text</button>
       </div>
     </form>
   </dialog>
@@ -288,7 +289,7 @@
   <dialog id="bookSheet" class="sheet book-sheet" aria-labelledby="bsTitle">
     <form method="dialog">
       <div class="sheet-head">
-        <p class="eyebrow">From your bookshelf</p>
+        <p class="eyebrow" data-i18n="From your bookshelf">From your bookshelf</p>
         <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
       </div>
       <div class="bs-top">
@@ -302,9 +303,9 @@
       </div>
 
       <section>
-        <h3>How long will it take?</h3>
+        <h3 data-i18n="How long will it take?">How long will it take?</h3>
         <div class="field">
-          <span class="field-label">At this pace</span>
+          <span class="field-label" data-i18n="At this pace">At this pace</span>
           <div class="pace-options" id="bsPaces" role="radiogroup" aria-label="Reading pace"></div>
           <div class="custom-pace" id="bsCustomRow" hidden>
             <input type="range" class="range" id="bsCustom" min="100" max="1200" step="25" aria-label="Custom words per minute" />
@@ -312,16 +313,16 @@
           </div>
         </div>
         <div class="estimates">
-          <div class="estimate"><span class="est-value" id="bsWhole">–</span><span class="tile-label">the whole book</span></div>
-          <div class="estimate"><span class="est-value" id="bsLeft">–</span><span class="tile-label" id="bsLeftLabel">left to read</span></div>
+          <div class="estimate"><span class="est-value" id="bsWhole">–</span><span class="tile-label" data-i18n="the whole book">the whole book</span></div>
+          <div class="estimate"><span class="est-value" id="bsLeft">–</span><span class="tile-label" id="bsLeftLabel" data-i18n="left to read">left to read</span></div>
         </div>
         <div class="field">
-          <span class="field-label">Reading a little each day</span>
+          <span class="field-label" data-i18n="Reading a little each day">Reading a little each day</span>
           <div class="segmented small" role="radiogroup" aria-label="Minutes a day">
             <label><input type="radio" name="dailyMinutes" value="10" /><span>10 min</span></label>
             <label><input type="radio" name="dailyMinutes" value="20" /><span>20</span></label>
             <label><input type="radio" name="dailyMinutes" value="30" /><span>30</span></label>
-            <label><input type="radio" name="dailyMinutes" value="60" /><span>1 hr</span></label>
+            <label><input type="radio" name="dailyMinutes" value="60" /><span data-i18n="1 hr">1 hr</span></label>
           </div>
         </div>
         <p class="plan" id="bsPlan"></p>
@@ -329,8 +330,8 @@
       </section>
 
       <div class="bs-actions">
-        <button type="button" class="btn primary big" id="bsOpen"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="bsOpenLabel">Open to my bookmark</span></button>
-        <button type="button" class="btn link" id="bsRemove">Take off the shelf</button>
+        <button type="button" class="btn primary big" id="bsOpen"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="bsOpenLabel" data-i18n="Open to my bookmark">Open to my bookmark</span></button>
+        <button type="button" class="btn link" id="bsRemove" data-i18n="Take off the shelf">Take off the shelf</button>
       </div>
     </form>
   </dialog>
@@ -338,33 +339,41 @@
   <dialog id="settings" class="sheet" aria-labelledby="settingsTitle">
     <form method="dialog">
       <div class="sheet-head">
-        <h2 id="settingsTitle">Settings</h2>
+        <h2 id="settingsTitle" data-i18n="Settings">Settings</h2>
         <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
       </div>
 
       <section>
-        <h3>Display</h3>
+        <h3>Language · Taal</h3>
+        <div class="segmented small" role="radiogroup" aria-label="Language · Taal">
+          <label><input type="radio" name="lang" value="af" /><span>Afrikaans</span></label>
+          <label><input type="radio" name="lang" value="en" /><span>English</span></label>
+        </div>
+      </section>
+
+      <section>
+        <h3 data-i18n="Display">Display</h3>
         <div class="field">
-          <span class="field-label">Theme</span>
+          <span class="field-label" data-i18n="Theme">Theme</span>
           <div class="swatches" role="radiogroup" aria-label="Theme">
-            <label class="swatch sw-auto"><input type="radio" name="theme" value="auto" /><span class="chip"><i></i></span>Auto</label>
-            <label class="swatch sw-light"><input type="radio" name="theme" value="light" /><span class="chip"><i></i></span>Light</label>
-            <label class="swatch sw-dark"><input type="radio" name="theme" value="dark" /><span class="chip"><i></i></span>Dark</label>
-            <label class="swatch sw-sepia"><input type="radio" name="theme" value="sepia" /><span class="chip"><i></i></span>Sepia</label>
-            <label class="swatch sw-ocean"><input type="radio" name="theme" value="ocean" /><span class="chip"><i></i></span>Ocean</label>
-            <label class="swatch sw-blossom"><input type="radio" name="theme" value="blossom" /><span class="chip"><i></i></span>Blossom</label>
+            <label class="swatch sw-auto"><input type="radio" name="theme" value="auto" /><span class="chip"><i></i></span><span data-i18n="Auto">Auto</span></label>
+            <label class="swatch sw-light"><input type="radio" name="theme" value="light" /><span class="chip"><i></i></span><span data-i18n="Light">Light</span></label>
+            <label class="swatch sw-dark"><input type="radio" name="theme" value="dark" /><span class="chip"><i></i></span><span data-i18n="Dark">Dark</span></label>
+            <label class="swatch sw-sepia"><input type="radio" name="theme" value="sepia" /><span class="chip"><i></i></span><span data-i18n="Sepia">Sepia</span></label>
+            <label class="swatch sw-ocean"><input type="radio" name="theme" value="ocean" /><span class="chip"><i></i></span><span data-i18n="Ocean">Ocean</span></label>
+            <label class="swatch sw-blossom"><input type="radio" name="theme" value="blossom" /><span class="chip"><i></i></span><span data-i18n="Blossom">Blossom</span></label>
           </div>
         </div>
         <div class="field">
-          <label class="field-label" for="fontSize">Text size <output id="fontSizeOut"></output></label>
+          <label class="field-label" for="fontSize"><span data-i18n="Text size">Text size</span> <output id="fontSizeOut"></output></label>
           <div class="size-row"><span class="aa sm">A</span><input type="range" class="range" id="fontSize" min="70" max="160" step="10" value="100" /><span class="aa lg">A</span></div>
         </div>
       </section>
 
       <section>
-        <h3>Reading</h3>
+        <h3 data-i18n="Reading">Reading</h3>
         <div class="field">
-          <span class="field-label">Words per highlight (Pacer)</span>
+          <span class="field-label" data-i18n="Words per highlight (Pacer)">Words per highlight (Pacer)</span>
           <div class="segmented small" role="radiogroup" aria-label="Words per highlight in Pacer">
             <label><input type="radio" name="pacerChunk" value="1" /><span>1</span></label>
             <label><input type="radio" name="pacerChunk" value="2" /><span>2</span></label>
@@ -373,7 +382,7 @@
           </div>
         </div>
         <div class="field">
-          <span class="field-label">Words per flash (Flash)</span>
+          <span class="field-label" data-i18n="Words per flash (Flash)">Words per flash (Flash)</span>
           <div class="segmented small" role="radiogroup" aria-label="Words per flash">
             <label><input type="radio" name="chunk" value="1" /><span>1</span></label>
             <label><input type="radio" name="chunk" value="2" /><span>2</span></label>
@@ -381,49 +390,49 @@
             <label><input type="radio" name="chunk" value="4" /><span>4</span></label>
           </div>
         </div>
-        <label class="toggle"><span><strong>Smart pauses</strong><small>Linger at punctuation, paragraphs and long words</small></span><input type="checkbox" id="pauses" /></label>
-        <label class="toggle"><span><strong>Ease in</strong><small>Start a little slower each time you press play</small></span><input type="checkbox" id="ramp" /></label>
-        <label class="toggle"><span><strong>Bionic bolding</strong><small>Bold the start of each word in Pacer</small></span><input type="checkbox" id="bionic" /></label>
+        <label class="toggle"><span><strong data-i18n="Smart pauses">Smart pauses</strong><small data-i18n="Linger at punctuation, paragraphs and long words">Linger at punctuation, paragraphs and long words</small></span><input type="checkbox" id="pauses" /></label>
+        <label class="toggle"><span><strong data-i18n="Ease in">Ease in</strong><small data-i18n="Start a little slower each time you press play">Start a little slower each time you press play</small></span><input type="checkbox" id="ramp" /></label>
+        <label class="toggle"><span><strong data-i18n="Bionic bolding">Bionic bolding</strong><small data-i18n="Bold the start of each word in Pacer">Bold the start of each word in Pacer</small></span><input type="checkbox" id="bionic" /></label>
       </section>
 
       <section>
-        <h3>Storytime</h3>
-        <p class="settings-note"><strong>Voices come from your device.</strong> Nook picks the most natural ones it can find and lists just the best few.</p>
-        <p class="settings-note warn" id="voiceTip" hidden>This device only has basic voices at the moment, which can sound robotic.</p>
+        <h3 data-i18n="Storytime">Storytime</h3>
+        <p class="settings-note" data-i18n-html="voicesNote"></p>
+        <p class="settings-note warn" id="voiceTip" hidden data-i18n="This device only has basic voices at the moment, which can sound robotic.">This device only has basic voices at the moment, which can sound robotic.</p>
         <p class="settings-note" id="voiceHelp"></p>
       </section>
 
       <section>
-        <h3>Screen</h3>
-        <label class="toggle"><span><strong>Keep screen on</strong><small id="awakeNote">Stops the screen dimming while you read. Turns off after 5 minutes paused.</small></span><input type="checkbox" id="keepAwake" /></label>
+        <h3 data-i18n="Screen">Screen</h3>
+        <label class="toggle"><span><strong data-i18n="Keep screen on">Keep screen on</strong><small id="awakeNote" data-i18n="Stops the screen dimming while you read. Turns off after 5 minutes paused.">Stops the screen dimming while you read. Turns off after 5 minutes paused.</small></span><input type="checkbox" id="keepAwake" /></label>
       </section>
 
       <section>
-        <h3>Your data</h3>
-        <p class="settings-note"><strong>Saved on this device.</strong> Your bookshelf, bookmarks, reading journal, pace history and settings stay in this browser between visits.</p>
+        <h3 data-i18n="Your data">Your data</h3>
+        <p class="settings-note" data-i18n-html="dataNote"></p>
         <p class="settings-note" id="dataStatus"></p>
         <p class="settings-note warn" id="dataWhere" hidden></p>
         <p class="settings-note" id="offlineStatus"></p>
         <div class="data-actions">
-          <button type="button" class="btn secondary" id="protectData" hidden>Protect my data</button>
-          <button type="button" class="btn secondary" id="backupData">Download a backup</button>
-          <label class="btn ghost" for="restoreFile">Restore from a backup</label>
+          <button type="button" class="btn secondary" id="protectData" hidden data-i18n="Protect my data">Protect my data</button>
+          <button type="button" class="btn secondary" id="backupData" data-i18n="Download a backup">Download a backup</button>
+          <label class="btn ghost" for="restoreFile" data-i18n="Restore from a backup">Restore from a backup</label>
           <input type="file" id="restoreFile" accept="application/json,.json" hidden />
         </div>
-        <p class="settings-note">A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.</p>
+        <p class="settings-note" data-i18n="A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.">A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.</p>
       </section>
 
       <section class="shortcuts">
-        <h3>Keyboard</h3>
+        <h3 data-i18n="Keyboard">Keyboard</h3>
         <dl>
-          <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
-          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous / next sentence</dd>
-          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower</dd>
-          <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next chapter</dd>
-          <dt><kbd>M</kbd></dt><dd>Next mode: Pacer, Flash, Page, Storytime</dd>
-          <dt><kbd>D</kbd></dt><dd>Look up the current word</dd>
+          <dt><kbd>Space</kbd></dt><dd data-i18n="Play / pause">Play / pause</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd data-i18n="Previous / next sentence">Previous / next sentence</dd>
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd data-i18n="Faster / slower">Faster / slower</dd>
+          <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd data-i18n="Previous / next chapter">Previous / next chapter</dd>
+          <dt><kbd>M</kbd></dt><dd data-i18n="Next mode: Pacer, Flash, Page, Storytime">Next mode: Pacer, Flash, Page, Storytime</dd>
+          <dt><kbd>D</kbd></dt><dd data-i18n="Look up the current word">Look up the current word</dd>
         </dl>
-        <p>Tap any word in Pacer, or in the paused Flash preview, to jump to it. Select words (press and drag, or double-click one) to look a word up or share a quote on WhatsApp.</p>
+        <p data-i18n-html="keyboardNote"></p>
       </section>
     </form>
   </dialog>

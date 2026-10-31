@@ -59,11 +59,12 @@ const Storytime = (() => {
     const region = (v.lang.split(/[-_]/)[1] || '').toUpperCase();
     let name = shortName(v);
     // Android names voices after their language, e.g. "English (United States)".
-    if (/^[a-z]+\s*\(?[a-z ]*\)?$/i.test(name) && /\(|^english|^afrikaans/i.test(name)) name = 'Voice';
+    if (/^[a-z]+\s*\(?[a-z ]*\)?$/i.test(name) && /\(|^english|^afrikaans/i.test(name)) name = typeof I18n !== 'undefined' ? I18n.t('Voice') : 'Voice';
     const parts = [name];
     const saysRegion = /\b(US|UK|GB)\b/.test(name) || (REGIONS[region] && name.toLowerCase().includes(REGIONS[region].toLowerCase()));
-    if (REGIONS[region] && !saysRegion) parts.push(REGIONS[region]);
-    if (isNatural(v)) parts.push('Natural');
+    const tr = (k) => (typeof I18n !== 'undefined' ? I18n.t(k) : k);
+    if (REGIONS[region] && !saysRegion) parts.push(tr(REGIONS[region]));
+    if (isNatural(v)) parts.push(tr('Natural'));
     return parts.join(' · ');
   }
 

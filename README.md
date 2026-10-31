@@ -1,11 +1,11 @@
 # Riette-1.github.io
 Countdown to christmas
 
-## Nook
+## Boekhoek
 
-*Read faster, from your favourite corner.* Created by Riëtte.
+*Lees vinniger, uit jou gunstelinghoekie.* Geskep deur Riëtte.
 
-[Nook](https://riette-1.github.io/nook/) is a browser-only speed reading app for `.epub` files, served from [`/speed-reader/`](https://riette-1.github.io/speed-reader/) (`/nook/` forwards there). Open or drop a book; nothing is uploaded.
+[Boekhoek](https://riette-1.github.io/boekhoek/) (previously Nook) is a browser-only speed reading app for `.epub` files, in Afrikaans with an English option. It's served from [`/speed-reader/`](https://riette-1.github.io/speed-reader/); `/boekhoek/` and `/nook/` forward there. Open or drop a book; nothing is uploaded.
 
 - **Flash (RSVP)**: shows one word (or a 2–4 word chunk) at a time at a fixed point, with the optimal recognition point in red.
 - **Pacer**: a highlight moves through the chapter at your target speed, with optional Bionic bolding.
