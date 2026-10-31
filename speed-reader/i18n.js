@@ -394,6 +394,38 @@ const I18n = (() => {
     'You listened to the whole book, {kid}! Well done!': 'Jy het na die hele boek geluister, {kid}! Mooi so!',
     'That’s the end of the book. Well done!': 'Dis die einde van die boek. Mooi so!',
     'Picture': 'Prentjie',
+    // Draw it yourself
+    'Want to draw your favourite moment from “{chapter}”?': 'Wil jy jou gunsteling-oomblik uit “{chapter}” teken?',
+    'Show what happened, or how it made you feel.': 'Wys wat gebeur het, of hoe dit jou laat voel het.',
+    'Yes, let’s draw!': 'Ja, kom ons teken!',
+    'Draw your favourite moment from “{chapter}”': 'Teken jou gunsteling-oomblik uit “{chapter}”',
+    'Draw anything you like!': 'Teken net wat jy wil!',
+    'Rubber': 'Uitveër',
+    'Undo': 'Ontdoen',
+    'Start over': 'Begin oor',
+    'Hang it in my gallery': 'Hang dit in my galery',
+    'Stop drawing? Your picture won’t be kept.': 'Hou op teken? Jou prent word nie gehou nie.',
+    'The drawing couldn’t be saved on this device.': 'Die tekening kon nie op hierdie toestel gestoor word nie.',
+    'Your picture is hanging in your gallery! 🖼️': 'Jou prent hang in jou galery! 🖼️',
+    'My art': 'My kuns',
+    'Draw something': 'Teken iets',
+    'Your drawings will hang here, like in a gallery.': 'Jou tekeninge sal hier hang, soos in ’n galery.',
+    'Save to this device': 'Stoor op hierdie toestel',
+    'Take it out of my art': 'Haal dit uit my kuns',
+    'Take this drawing out of the gallery?': 'Haal hierdie tekening uit die galery?',
+    'Little artist': 'Klein kunstenaar',
+    'Draw your first picture': 'Teken jou eerste prent',
+    'Draw after each chapter': 'Teken ná elke hoofstuk',
+    'Offer to draw a favourite moment when a chapter ends': 'Bied aan om ’n gunsteling-oomblik te teken wanneer ’n hoofstuk klaar is',
+    'Drawing': 'Tekening',
+    'Colours': 'Kleure',
+    'Brush size': 'Kwasgrootte',
+    'Thin': 'Dun', 'Medium': 'Middel', 'Thick': 'Dik',
+    'Stamps': 'Stempels',
+    // Version
+    'About Boekhoek': 'Oor Boekhoek',
+    'What’s new in this version': 'Wat’s nuut in hierdie weergawe',
+    'Boekhoek version {version} · {date}': 'Boekhoek weergawe {version} · {date}',
     'Mia': 'Mia',
     'Mamma': 'Mamma',
 
@@ -459,8 +491,8 @@ const I18n = (() => {
   // Text that contains markup, keyed by name rather than by English.
   const HTML = {
     credit: {
-      en: '<strong>Boekhoek</strong> · Created by <strong>Riëtte</strong>',
-      af: '<strong>Boekhoek</strong> · Geskep deur <strong>Riëtte</strong>',
+      en: '<strong>Boekhoek</strong> <span class="ver">{version}</span> · Created by <strong>Riëtte</strong>',
+      af: '<strong>Boekhoek</strong> <span class="ver">{version}</span> · Geskep deur <strong>Riëtte</strong>',
     },
     welcome: { en: 'Welcome to Boekhoek', af: 'Welkom by Boekhoek' },
     emptyShelf: {
@@ -532,16 +564,25 @@ const I18n = (() => {
 
   // Translate everything tagged in the page. The English originals are kept
   // in data attributes so switching back and forth always starts from them.
+  let applied = false;
+
   function apply(root = document) {
     document.documentElement.lang = lang;
+    // Attribute text from the page's own markup is collected on the first
+    // pass; labels the app builds later are translated as they're made.
+    const first = !applied;
+    applied = true;
     for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
     for (const el of root.querySelectorAll('[data-i18n-html]')) {
       const entry = HTML[el.dataset.i18nHtml];
-      if (entry) el.innerHTML = entry[lang] || entry.en;
+      if (entry) el.innerHTML = (entry[lang] || entry.en).replace('{version}', typeof APP !== 'undefined' ? APP.version : '');
     }
     for (const [attr, store] of ATTRS) {
       for (const el of root.querySelectorAll(`[${attr}]`)) {
-        if (!(store in el.dataset)) el.dataset[store] = el.getAttribute(attr);
+        if (!(store in el.dataset)) {
+          if (!first) continue;
+          el.dataset[store] = el.getAttribute(attr);
+        }
         el.setAttribute(attr, t(el.dataset[store]));
       }
     }

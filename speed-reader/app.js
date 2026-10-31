@@ -914,13 +914,16 @@
 
   // Rewards, then the quiz, then `resume`. Returns true when reading paused
   // for something; false means carry straight on.
+  const drawPromptsOn = () => Kids.on && Kids.state.drawPrompts !== false;
+
   function endOfChapter(ci, resume) {
     const earned = Kids.on ? Kids.chapterDone(isAfrikaansBook()) : [];
     const cheer = Kids.on && settings.mode === 'story';
-    if (!earned.length && !quizFor(ci) && !cheer) return false;
+    if (!earned.length && !quizFor(ci) && !cheer && !drawPromptsOn()) return false;
     pause();
     render();
-    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, resume)) resume(); });
+    const afterQuiz = () => offerDrawing(ci, resume);
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, afterQuiz)) afterQuiz(); });
     if (cheer) sayAloud(chapterCheer(), next);
     else next();
     return true;
@@ -934,7 +937,8 @@
       showStatus(message, false, 6000);
       if (Kids.on) Kids.confetti(60);
     };
-    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, done)) done(); });
+    const afterQuiz = () => offerDrawing(ci, done);
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, afterQuiz)) afterQuiz(); });
     if (Kids.on && settings.mode === 'story') sayAloud(bookCheer(), next);
     else next();
   }
@@ -968,6 +972,7 @@
 
   function renderKidsHome() {
     if (!Kids.on) return;
+    renderArt();
     const name = Kids.state.childName;
     const b = Kids.buddy();
     $('greeting').textContent = name ? t('Hello, {name}!', { name }) : t('Hello, reader!');
@@ -1062,6 +1067,204 @@
     creatureSheet.close();
     renderHome();
     Kids.confetti(30);
+  });
+
+  // ---- Draw it yourself.
+  const drawPrompt = $('drawPrompt');
+  const drawSheet = $('drawSheet');
+  const canvas = $('drawCanvas');
+  const ctx = canvas.getContext('2d');
+  const PAINTS = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#92400e', '#111827', '#ffffff'];
+  const pen = { color: PAINTS[4], size: 16, eraser: false, stamp: '', drawing: false, last: null };
+  let undoStack = [];
+  let drawCtx = null;
+  let drawThen = null;
+
+  // After a chapter: ask first, so drawing never feels like homework.
+  function offerDrawing(ci, then) {
+    if (!drawPromptsOn()) { then(); return; }
+    drawThen = then;
+    drawCtx = { book: book.title, chapter: book.chapters[ci].title, ci };
+    $('drawPromptTitle').textContent = t('Want to draw your favourite moment from “{chapter}”?', { chapter: drawCtx.chapter });
+    drawPrompt.showModal();
+  }
+  $('drawYes').addEventListener('click', () => { drawPrompt.close(); openDrawing(drawCtx); });
+  $('drawNo').addEventListener('click', () => { drawPrompt.close(); finishDrawing(); });
+
+  function finishDrawing() {
+    const then = drawThen;
+    drawThen = null;
+    if (then) then();
+  }
+
+  function clearCanvas() {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Stamps: pictures from the chapter, then a few favourites.
+  function stampsFor(ci) {
+    const found = [];
+    if (book && ci != null) {
+      const ch = book.chapters[ci];
+      for (let i = ch.start; i < ch.end && found.length < 10; i++) {
+        const pic = Kids.pictureFor(book.words[i]);
+        if (pic && !found.includes(pic)) found.push(pic);
+      }
+    }
+    for (const extra of ['⭐', '🌈', '❤️', '🌸', '☀️', '🦋']) if (found.length < 14 && !found.includes(extra)) found.push(extra);
+    return found;
+  }
+
+  function openDrawing(context) {
+    drawCtx = context || { book: book ? book.title : '', chapter: '', ci: null };
+    $('drawTitle').textContent = drawCtx.chapter ? t('Draw your favourite moment from “{chapter}”', { chapter: drawCtx.chapter }) : t('Draw anything you like!');
+    clearCanvas();
+    undoStack = [];
+    pen.eraser = false;
+    pen.stamp = '';
+    $('drawEraser').setAttribute('aria-pressed', 'false');
+    $('drawColors').replaceChildren(...PAINTS.map((c) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'paint' });
+      b.style.background = c;
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', c);
+      b.setAttribute('aria-checked', String(c === pen.color));
+      b.addEventListener('click', () => {
+        pen.color = c;
+        pen.eraser = false;
+        pen.stamp = '';
+        $('drawEraser').setAttribute('aria-pressed', 'false');
+        $('drawColors').querySelectorAll('.paint').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+        $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+      });
+      return b;
+    }));
+    $('drawStamps').replaceChildren(...stampsFor(drawCtx.ci).map((pic) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'stamp', textContent: pic });
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        pen.stamp = pen.stamp === pic ? '' : pic;
+        $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', String(x === b && !!pen.stamp)));
+      });
+      return b;
+    }));
+    drawSheet.showModal();
+  }
+
+  const pointOf = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) * canvas.width) / r.width, y: ((e.clientY - r.top) * canvas.height) / r.height };
+  };
+  function saveUndo() {
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (undoStack.length > 25) undoStack.shift();
+  }
+  function line(a, b) {
+    ctx.strokeStyle = pen.eraser ? '#ffffff' : pen.color;
+    ctx.lineWidth = pen.eraser ? pen.size * 2.5 : pen.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    saveUndo();
+    const p = pointOf(e);
+    if (pen.stamp) {
+      ctx.font = `${pen.size * 6 + 40}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pen.stamp, p.x, p.y);
+      return;
+    }
+    pen.drawing = true;
+    pen.last = p;
+    line(p, { x: p.x + 0.01, y: p.y });
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pen.drawing) return;
+    const p = pointOf(e);
+    line(pen.last, p);
+    pen.last = p;
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) canvas.addEventListener(ev, () => { pen.drawing = false; });
+  for (const r of document.querySelectorAll('input[name="brush"]')) r.addEventListener('change', () => { pen.size = +r.value; });
+  $('drawEraser').addEventListener('click', () => {
+    pen.eraser = !pen.eraser;
+    pen.stamp = '';
+    $('drawEraser').setAttribute('aria-pressed', String(pen.eraser));
+    $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+  });
+  $('drawUndo').addEventListener('click', () => { const img = undoStack.pop(); if (img) ctx.putImageData(img, 0, 0); });
+  $('drawClear').addEventListener('click', () => { saveUndo(); clearCanvas(); });
+  $('drawClose').addEventListener('click', () => {
+    if (undoStack.length && !confirm(t('Stop drawing? Your picture won’t be kept.'))) return;
+    drawSheet.close();
+    finishDrawing();
+  });
+  $('drawSave').addEventListener('click', async () => {
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    try {
+      await Art.add({ blob, book: drawCtx.book, chapter: drawCtx.chapter, kid: Kids.state.childName || '' });
+    } catch {
+      showStatus(t('The drawing couldn’t be saved on this device.'), true, 5000);
+      return;
+    }
+    drawSheet.close();
+    Kids.confetti(50);
+    showStatus(t('Your picture is hanging in your gallery! 🖼️'), false, 4000);
+    renderArt();
+    showStickers(Kids.check('art'), finishDrawing);
+  });
+  $('drawFree').addEventListener('click', () => { drawThen = null; openDrawing(null); });
+
+  // ---- My art: the gallery.
+  let artUrls = [];
+  let shownArt = null;
+  async function renderArt() {
+    if (!Kids.on) return;
+    const list = await Art.all();
+    artUrls.forEach((u) => URL.revokeObjectURL(u));
+    artUrls = [];
+    $('artEmpty').hidden = list.length > 0;
+    $('artGrid').replaceChildren(...list.map((a) => {
+      const url = URL.createObjectURL(a.blob);
+      artUrls.push(url);
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'art-frame' });
+      b.setAttribute('role', 'listitem');
+      const when = new Date(a.at).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
+      const label = a.chapter || a.book || '';
+      b.setAttribute('aria-label', label ? `${label}, ${when}` : when);
+      b.append(Object.assign(document.createElement('img'), { src: url, alt: '' }), Object.assign(document.createElement('small'), { textContent: label ? `${label} · ${when}` : when }));
+      b.addEventListener('click', () => {
+        shownArt = { ...a, url };
+        $('picBig').src = url;
+        $('picBig').alt = label;
+        $('picCaption').textContent = [...new Set([a.book, a.chapter].filter(Boolean)), when].join(' · ');
+        $('picActions').hidden = false;
+        $('picSheet').showModal();
+      });
+      return b;
+    }));
+  }
+  $('picSheet').addEventListener('close', () => { $('picActions').hidden = true; shownArt = null; });
+  $('artSave').addEventListener('click', () => {
+    if (!shownArt) return;
+    const a = Object.assign(document.createElement('a'), { href: shownArt.url, download: `boekhoek-tekening-${new Date(shownArt.at).toISOString().slice(0, 10)}.png` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+  });
+  $('artDelete').addEventListener('click', async () => {
+    if (!shownArt || !confirm(t('Take this drawing out of the gallery?'))) return;
+    await Art.remove(shownArt.id);
+    $('picSheet').close();
+    renderArt();
   });
 
   // ---- Picture bubbles: things in the story float up as pictures.
@@ -1422,6 +1625,7 @@
     applyAppearance();
     $('kidsToggle').textContent = t(Kids.on ? 'Turn kids’ mode off' : 'Turn kids’ mode on');
     $('changePin').hidden = !Kids.hasPin();
+    $('drawPrompts').checked = Kids.state.drawPrompts !== false;
     $('childName').value = Kids.state.childName;
     $('adultName').value = Kids.state.adultName;
     updateListenBanner();
@@ -1453,6 +1657,7 @@
   $('changePin').addEventListener('click', async () => {
     if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
   });
+  $('drawPrompts').addEventListener('change', (e) => { Kids.state.drawPrompts = e.target.checked; Kids.save(); });
   for (const id of ['childName', 'adultName']) {
     $(id).addEventListener('input', (e) => { Kids.state[id] = e.target.value.trim(); Kids.save(); });
   }
@@ -1892,6 +2097,7 @@
     renderInstallCard();
     renderDataStatus();
     renderOfflineStatus();
+    renderAbout();
     renderHome();
     if (book) {
       lastChapter = -1;
@@ -1917,10 +2123,17 @@
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
+  function renderAbout() {
+    const date = new Date(`${APP.date}T12:00:00`).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+    $('aboutVersion').textContent = t('Boekhoek version {version} · {date}', { version: APP.version, date });
+    $('aboutNotes').replaceChildren(...(APP.notes[I18n.lang] || APP.notes.en).map((n) => Object.assign(document.createElement('li'), { textContent: n })));
+  }
+
   $('openSettings').addEventListener('click', async () => {
     if (Kids.on && !(await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to open Settings.'), check: true }))) return;
     renderDataStatus();
     renderOfflineStatus();
+    renderAbout();
     applyKids();
     dialog.showModal();
   });
@@ -2380,7 +2593,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;

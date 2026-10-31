@@ -186,6 +186,7 @@ const Kids = (() => {
     { id: 'streak7', emoji: '🌈', name: 'Rainbow week', how: 'Read 7 days in a row', test: () => streak() >= 7 },
     { id: 'three-books', emoji: '🏆', name: 'Book collector', how: 'Finish 3 books', test: (s) => Object.keys(s.books).length >= 3 },
     { id: 'word-match', emoji: '🎯', name: 'Word wizard', how: 'Win a game of word match', test: (s, e) => e === 'game' },
+    { id: 'artist', emoji: '🎨', name: 'Little artist', how: 'Draw your first picture', test: (s, e) => e === 'art' },
     { id: 'owl-king', emoji: '👑', name: 'Royal buddy', how: 'Grow your buddy all the way', test: () => buddy().last },
   ];
 

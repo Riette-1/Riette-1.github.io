@@ -18,17 +18,19 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=23" />
-  <script src="i18n.js?v=23" defer></script>
-  <script src="epub.js?v=23" defer></script>
-  <script src="library.js?v=23" defer></script>
-  <script src="journal.js?v=23" defer></script>
-  <script src="dictionary.js?v=23" defer></script>
-  <script src="storytime.js?v=23" defer></script>
-  <script src="backup.js?v=23" defer></script>
-  <script src="quiz.js?v=23" defer></script>
-  <script src="kids.js?v=23" defer></script>
-  <script src="app.js?v=23" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.1.0" />
+  <script src="version.js?v=1.1.0" defer></script>
+  <script src="i18n.js?v=1.1.0" defer></script>
+  <script src="epub.js?v=1.1.0" defer></script>
+  <script src="library.js?v=1.1.0" defer></script>
+  <script src="journal.js?v=1.1.0" defer></script>
+  <script src="dictionary.js?v=1.1.0" defer></script>
+  <script src="storytime.js?v=1.1.0" defer></script>
+  <script src="backup.js?v=1.1.0" defer></script>
+  <script src="quiz.js?v=1.1.0" defer></script>
+  <script src="kids.js?v=1.1.0" defer></script>
+  <script src="art.js?v=1.1.0" defer></script>
+  <script src="app.js?v=1.1.0" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -121,6 +123,12 @@
         <span class="section-note" id="stickerCount"></span>
       </div>
       <div class="sticker-grid" id="stickerGrid" role="list"></div>
+      <div class="section-head" style="margin-top: 24px">
+        <h2 data-i18n="My art">My art</h2>
+        <button type="button" class="btn secondary" id="drawFree"><span aria-hidden="true">🎨</span> <span data-i18n="Draw something">Draw something</span></button>
+      </div>
+      <div class="art-grid" id="artGrid" role="list"></div>
+      <p class="art-empty" id="artEmpty" data-i18n="Your drawings will hang here, like in a gallery.">Your drawings will hang here, like in a gallery.</p>
       <div class="section-head" style="margin-top: 24px">
         <h2 data-i18n="My colours">My colours</h2>
       </div>
@@ -397,6 +405,45 @@
     </form>
   </dialog>
 
+  <dialog id="drawPrompt" class="sheet draw-prompt" aria-labelledby="drawPromptTitle">
+    <form method="dialog">
+      <div class="draw-prompt-art" aria-hidden="true">🎨</div>
+      <h2 id="drawPromptTitle"></h2>
+      <p data-i18n="Show what happened, or how it made you feel.">Show what happened, or how it made you feel.</p>
+      <div class="quiz-actions">
+        <button type="button" class="btn primary big" id="drawYes"><span data-i18n="Yes, let’s draw!">Yes, let’s draw!</span> 🎨</button>
+        <button type="button" class="btn link" id="drawNo" data-i18n="Not now">Not now</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="drawSheet" class="sheet draw-sheet" aria-labelledby="drawTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="drawTitle"></h2>
+        <button type="button" class="btn round sm ghost" id="drawClose" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="canvas-wrap"><canvas id="drawCanvas" width="1200" height="900" aria-label="Drawing"></canvas></div>
+      <div class="draw-tools">
+        <div class="swatch-row" id="drawColors" role="radiogroup" aria-label="Colours"></div>
+        <div class="tool-row">
+          <div class="segmented small" role="radiogroup" aria-label="Brush size">
+            <label><input type="radio" name="brush" value="6" /><span aria-label="Thin">●</span></label>
+            <label><input type="radio" name="brush" value="16" checked /><span aria-label="Medium" style="font-size:18px">●</span></label>
+            <label><input type="radio" name="brush" value="34" /><span aria-label="Thick" style="font-size:24px">●</span></label>
+          </div>
+          <button type="button" class="btn ghost tool" id="drawEraser" aria-pressed="false"><span aria-hidden="true">🧽</span> <span data-i18n="Rubber">Rubber</span></button>
+          <button type="button" class="btn ghost tool" id="drawUndo"><span aria-hidden="true">↩️</span> <span data-i18n="Undo">Undo</span></button>
+          <button type="button" class="btn ghost tool" id="drawClear"><span aria-hidden="true">🗑️</span> <span data-i18n="Start over">Start over</span></button>
+        </div>
+        <div class="stamp-row" id="drawStamps" aria-label="Stamps"></div>
+      </div>
+      <div class="quiz-actions">
+        <button type="button" class="btn primary big" id="drawSave"><span data-i18n="Hang it in my gallery">Hang it in my gallery</span> 🖼️</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="creatureSheet" class="sheet" aria-labelledby="creatureTitle">
     <form method="dialog">
       <div class="sheet-head">
@@ -418,6 +465,10 @@
       <div class="sheet-head"><span></span><button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button></div>
       <img id="picBig" alt="" />
       <p id="picCaption"></p>
+      <div class="pic-actions" id="picActions" hidden>
+        <button type="button" class="btn secondary" id="artSave" data-i18n="Save to this device">Save to this device</button>
+        <button type="button" class="btn link" id="artDelete" data-i18n="Take it out of my art">Take it out of my art</button>
+      </div>
     </form>
   </dialog>
 
@@ -549,6 +600,7 @@
           <label class="field-label" for="adultName"><span data-i18n="Who reads together with them?">Who reads together with them?</span></label>
           <input type="text" class="text-input" id="adultName" maxlength="20" autocomplete="off" placeholder="Mamma" />
         </div>
+        <label class="toggle"><span><strong data-i18n="Draw after each chapter">Draw after each chapter</strong><small data-i18n="Offer to draw a favourite moment when a chapter ends">Offer to draw a favourite moment when a chapter ends</small></span><input type="checkbox" id="drawPrompts" /></label>
         <div class="data-actions">
           <button type="button" class="btn primary" id="kidsToggle"></button>
           <button type="button" class="btn ghost" id="changePin" hidden data-i18n="Change the PIN">Change the PIN</button>
@@ -574,6 +626,13 @@
           <input type="file" id="restoreFile" accept="application/json,.json" hidden />
         </div>
         <p class="settings-note" data-i18n="A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.">A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.</p>
+      </section>
+
+      <section class="about">
+        <h3 data-i18n="About Boekhoek">About Boekhoek</h3>
+        <p class="about-version" id="aboutVersion"></p>
+        <p class="field-label" data-i18n="What’s new in this version">What’s new in this version</p>
+        <ul class="about-notes" id="aboutNotes"></ul>
       </section>
 
       <section class="shortcuts">

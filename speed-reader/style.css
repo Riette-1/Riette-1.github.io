@@ -771,6 +771,39 @@ body.mode-together #play { display: none; }
 .pic-sheet img { max-width: 100%; max-height: 75vh; border-radius: 16px; }
 .pic-sheet p { color: var(--muted); }
 
+/* ---------- Draw it yourself ---------- */
+
+.draw-prompt { max-width: 380px; text-align: center; }
+.draw-prompt-art { font-size: 72px; line-height: 1; margin: 8px 0; animation: wiggle 1.2s ease-in-out infinite; }
+.draw-prompt h2 { margin: 6px 0; font-size: 1.3rem; }
+.draw-prompt p { color: var(--muted); margin: 0; }
+.draw-sheet { width: min(760px, calc(100% - 16px)); max-height: 96vh; }
+.draw-sheet .sheet-head h2 { font-size: 1.1rem; margin: 0; }
+.canvas-wrap { border-radius: 18px; overflow: hidden; border: 3px solid var(--border); background: #ffffff; touch-action: none; }
+#drawCanvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; touch-action: none; cursor: crosshair; }
+.draw-tools { display: grid; gap: 10px; margin-top: 12px; }
+.swatch-row, .stamp-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.paint { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 2px var(--border); cursor: pointer; padding: 0; }
+.paint[aria-checked="true"] { box-shadow: 0 0 0 3px var(--text); transform: scale(1.1); }
+.tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.btn.tool { padding: 8px 12px; font-size: 14px; }
+.btn.tool[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.stamp { width: 44px; height: 44px; font-size: 26px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface); cursor: pointer; padding: 0; }
+.stamp[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+
+.art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+.art-frame { border: 0; padding: 8px 8px 6px; background: #ffffff; border-radius: 6px; box-shadow: 0 0 0 6px #b45309, 0 0 0 9px #fbbf24, 0 8px 18px rgba(0, 0, 0, 0.2); cursor: pointer; margin: 10px; }
+.art-frame:nth-child(2n) { transform: rotate(-2deg); }
+.art-frame:nth-child(2n+1) { transform: rotate(1.5deg); }
+.art-frame img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.art-frame small { display: block; margin-top: 4px; font-size: 11px; color: #57534e; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.art-empty { color: var(--muted); }
+.pic-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+.about-version { font-weight: 700; }
+.about-notes { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.credit .ver { font-weight: 500; color: var(--muted); }
+
 /* New sticker pop-up. */
 .sticker-pop { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40; background: rgba(0, 0, 0, 0.35); animation: fade-in .2s; }
 .sticker-pop .card { text-align: center; background: var(--surface); color: var(--text); border-radius: 32px; padding: 28px 32px; max-width: 300px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: pop-in .45s cubic-bezier(.2, 1.6, .4, 1); }
