@@ -18,14 +18,14 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=18" />
-  <script src="epub.js?v=18" defer></script>
-  <script src="library.js?v=18" defer></script>
-  <script src="journal.js?v=18" defer></script>
-  <script src="dictionary.js?v=18" defer></script>
-  <script src="storytime.js?v=18" defer></script>
-  <script src="backup.js?v=18" defer></script>
-  <script src="app.js?v=18" defer></script>
+  <link rel="stylesheet" href="style.css?v=19" />
+  <script src="epub.js?v=19" defer></script>
+  <script src="library.js?v=19" defer></script>
+  <script src="journal.js?v=19" defer></script>
+  <script src="dictionary.js?v=19" defer></script>
+  <script src="storytime.js?v=19" defer></script>
+  <script src="backup.js?v=19" defer></script>
+  <script src="app.js?v=19" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -223,7 +223,7 @@
         <input type="range" class="range" id="progress" min="0" max="0" value="0" aria-label="Position in book" />
       </div>
       <div class="control-row">
-        <div class="speed fade-when-playing">
+        <div class="speed">
           <button class="btn round sm" id="slower" title="Slower (↓)" aria-label="Slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
           <div class="speed-value"><output id="wpmOut">300</output><span>wpm</span></div>
           <button class="btn round sm" id="faster" title="Faster (↑)" aria-label="Faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>
@@ -236,7 +236,7 @@
           <button class="btn round" id="fwd" title="Next sentence (→)" aria-label="Next sentence"><svg class="ic" width="20" height="20"><use href="#i-fwd"/></svg></button>
           <button class="btn round fade-when-playing" id="nextChapter" title="Next chapter (])" aria-label="Next chapter"><svg class="ic" width="20" height="20"><use href="#i-next"/></svg></button>
         </div>
-        <div class="story-controls fade-when-playing" id="storyControls">
+        <div class="story-controls" id="storyControls">
           <button class="btn round sm" id="storySlower" title="Speak slower" aria-label="Speak slower"><svg class="ic" width="20" height="20"><use href="#i-minus"/></svg></button>
           <div class="speed-value"><output id="storyRateOut">1.0×</output><span>voice</span></div>
           <button class="btn round sm" id="storyFaster" title="Speak faster" aria-label="Speak faster"><svg class="ic" width="20" height="20"><use href="#i-plus"/></svg></button>

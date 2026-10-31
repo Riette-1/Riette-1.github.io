@@ -33,6 +33,13 @@
   let playing = false;
   let timer = 0;
   let rampStep = 0;
+  // The word (or group) on screen now: when it appeared, how long it stays,
+  // and what happens next. Lets a speed change apply mid-word.
+  let stepStarted = 0;
+  let stepDelay = 0;
+  let stepRamp = 1;
+  let stepWords = 0;
+  let stepAdvance = null;
   let pacerChapter = -1;
   let pacerSpans = [];
   let pacerCurs = [];
@@ -606,11 +613,12 @@
     if (pos >= book.words.length) { pos = book.words.length - 1; pause(); return; }
     const n = Math.min(stepSize(pos), book.words.length - pos);
     render();
-    let d = 0;
-    for (let k = 0; k < n; k++) d += wordDelay(pos + k);
-    if (settings.ramp && rampStep < 10) d *= 1 + (10 - rampStep) * 0.07;
+    stepRamp = settings.ramp && rampStep < 10 ? 1 + (10 - rampStep) * 0.07 : 1;
     rampStep++;
-    timer = setTimeout(() => {
+    stepWords = n;
+    stepDelay = groupDelay(pos, n);
+    stepStarted = performance.now();
+    stepAdvance = () => {
       pos += n;
       Journal.addWords(n);
       if (pos >= book.words.length) {
@@ -622,7 +630,27 @@
         return;
       }
       step();
-    }, d);
+    };
+    timer = setTimeout(stepAdvance, stepDelay);
+  }
+
+  function groupDelay(from, n) {
+    let d = 0;
+    for (let k = 0; k < n; k++) d += wordDelay(from + k);
+    return d * stepRamp;
+  }
+
+  // Apply a new speed straight away: keep the share of the current word
+  // that's already been shown, and show the rest at the new speed.
+  function retimeStep() {
+    if (!playing || settings.mode === 'story' || !stepAdvance) return;
+    const now = performance.now();
+    const done = Math.min(1, (now - stepStarted) / (stepDelay || 1));
+    const d = groupDelay(pos, stepWords);
+    clearTimeout(timer);
+    stepDelay = d;
+    stepStarted = now - done * d;
+    timer = setTimeout(stepAdvance, Math.max(0, (1 - done) * d));
   }
 
   function play() {
@@ -1024,6 +1052,7 @@
     fill($('wpm'));
     saveSettings();
     if (book) renderStats(chapterAt(pos));
+    retimeStep();
   }
 
   function applyAppearance() {
