@@ -4,6 +4,25 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.2.0 · 31 October 2026
+
+- **Hand-drawn reading buddies:** the dragon, unicorn, pegasus, dinosaur and owl are now drawn in one
+  matching cartoon style (SVG in `buddies.js`) instead of a mix of emoji, so they look the same on every
+  phone. Six stages each: an egg in the creature's colours (wobbling), a hatchling in its cracked shell,
+  little, grown, grown with something special (fire, rainbow, sparkles, sunglasses, graduation cap) and
+  royal with a crown. Used on the buddy card, in the picker, in the "your buddy grew" pop-up and on the
+  reading map.
+- Fixes Pegasus's wings covering the picker card.
+
+## 1.1.1 · 31 October 2026
+
+- **Reading together uses the grown-up's name** ("Mamma se beurt!" instead of "die grootmens se beurt!").
+  If no name is set, Boekhoek asks *"Wie lees saam met jou?"* with quick choices (Mamma, Pappa, Ouma,
+  Oupa) or any other name, and "Someone else reading?" on the turn card changes it any time.
+- A face that fits the grown-up (👩 👨 👵 👴), the turn title always starts with a capital, and
+  "Jou beurt!" when the child's name isn't set.
+- The name boxes in Settings now show "e.g. Mia" / "e.g. Mamma", so the examples don't look filled in.
+
 ## 1.1.0 · 31 October 2026
 
 - **Draw it yourself:** after a chapter in kids' mode, children can draw their favourite moment, with

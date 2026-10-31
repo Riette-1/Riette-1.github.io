@@ -955,7 +955,8 @@
     pop.setAttribute('aria-label', t('New sticker!'));
     const card = document.createElement('div');
     card.className = 'card';
-    const em = Object.assign(document.createElement('span'), { className: 'em', textContent: s.emoji });
+    const em = Object.assign(document.createElement('span'), { className: 'em' });
+    if (s.art) em.append(s.art); else em.textContent = s.emoji;
     const eyebrow = Object.assign(document.createElement('p'), { className: 'eyebrow', textContent: t('New sticker!') });
     const name = Object.assign(document.createElement('h3'), { textContent: t(s.name) });
     const how = Object.assign(document.createElement('p'), { textContent: t(s.how) });
@@ -1019,18 +1020,9 @@
     }));
   }
 
-  // A creature's face, with its extra (a crown, rainbow...) and drawn wings.
-  function drawBuddy(host, stage) {
-    host.replaceChildren(stage.face);
-    if (stage.wings) {
-      for (const side of ['left', 'right']) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', `wing ${side}`);
-        svg.innerHTML = '<use href="#i-wing"/>';
-        host.append(svg);
-      }
-    }
-    if (stage.extra) host.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: stage.extra }));
+  // The drawn buddy for a creature at a stage (see buddies.js).
+  function drawBuddy(host, b) {
+    host.replaceChildren(Buddies.svg(b.creature || 'owl', b.stage, b.stage === 0 ? 'wobble' : ''));
   }
 
   // ---- Choosing a creature.
@@ -1047,7 +1039,7 @@
       const pv = document.createElement('span');
       pv.className = 'pv';
       // Preview the grown-up form, so children can see what they're growing.
-      drawBuddy(pv, { ...c.stages[3] });
+      drawBuddy(pv, { creature: id, stage: 3 });
       card.append(pv, Object.assign(document.createElement('strong'), { textContent: t(c.name) }), Object.assign(document.createElement('small'), { textContent: t(c.stages[0].label) }));
       label.append(input, card);
       input.addEventListener('change', () => { if (!$('buddyName').dataset.edited) $('buddyName').value = t(c.pet); });
@@ -1324,7 +1316,8 @@
     if (m && m.total && b.key === bookKey && book) {
       for (const ch of book.chapters.slice(1)) stops.push(ch.start / m.total);
     }
-    const place = Kids.renderMap($('readingMap'), b.key, p.pct, stops, Kids.buddy().face);
+    const buddyNow = Kids.buddy();
+    const place = Kids.renderMap($('readingMap'), b.key, p.pct, stops, Buddies.svg(buddyNow.creature || 'owl', buddyNow.stage));
     $('mapText').textContent = p.finished
       ? t('You made it to {place}! 🎉', { place: t(place.name) })
       : p.started
@@ -1353,7 +1346,8 @@
     const before = Kids.buddy().stage;
     Kids.addTime(TICK);
     const earned = Kids.check('time');
-    if (Kids.buddy().stage > before) earned.unshift({ emoji: Kids.buddy().face, name: 'Your buddy grew!', how: 'Keep reading to help it grow even more.' });
+    const grown = Kids.buddy();
+    if (grown.stage > before) earned.unshift({ art: Buddies.svg(grown.creature || 'owl', grown.stage), name: 'Your buddy grew!', how: 'Keep reading to help it grow even more.' });
     if (earned.length) { if (playing) pause(); showStickers(earned); }
   }, TICK);
 
@@ -1395,13 +1389,51 @@
     const pics = [];
     for (let i = s; i <= e && pics.length < 6; i++) { const pic = Kids.pictureFor(book.words[i]); if (pic && !pics.includes(pic)) pics.push(pic); }
     $('sceneStrip').textContent = pics.join(' ');
-    const kid = Kids.state.childName || t('you');
+    const kid = Kids.state.childName;
     const grown = Kids.state.adultName || t('the grown-up');
+    const cap = (text) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
     $('turnCard').classList.toggle('adult', !child);
-    $('turnFace').textContent = child ? '🧒' : '🧑';
-    $('turnWho').textContent = child ? t('Your turn, {name}!', { name: kid }) : t('{name}’s turn!', { name: grown });
+    $('turnFace').textContent = child ? '🧒' : faceFor(Kids.state.adultName);
+    $('turnWho').textContent = cap(child ? (kid ? t('Your turn, {name}!', { name: kid }) : t('Your turn!')) : t('{name}’s turn!', { name: grown }));
     $('turnHint').textContent = child ? t('Read the orange part out loud.') : t('Listen while {name} reads the blue part.', { name: grown });
   }
+
+  // A face that fits who's reading with the child.
+  function faceFor(name) {
+    const n = (name || '').toLowerCase();
+    if (/^(mamma|ma|mom|mommy|mum|mummy|mother|moeder|mams)$/.test(n)) return '👩';
+    if (/^(pappa|pa|dad|daddy|father|vader|paps)$/.test(n)) return '👨';
+    if (/^(ouma|granny|grandma|gran|nana)$/.test(n)) return '👵';
+    if (/^(oupa|grandpa|grandad)$/.test(n)) return '👴';
+    return '🧑‍🦱';
+  }
+
+  // ---- Who's reading with the child? Asked when it isn't known yet, and
+  // easy to change when someone else takes a turn tonight.
+  const whoSheet = $('whoSheet');
+  function askWho() {
+    const people = [['Mom', '👩'], ['Dad', '👨'], ['Granny', '👵'], ['Grandpa', '👴']];
+    $('whoGrid').replaceChildren(...people.map(([key, em]) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'who-pick' });
+      b.append(Object.assign(document.createElement('span'), { className: 'em', textContent: em }), t(key));
+      b.addEventListener('click', () => setWho(t(key)));
+      return b;
+    }));
+    $('whoOther').value = '';
+    whoSheet.showModal();
+  }
+  function setWho(name) {
+    const clean = (name || '').trim();
+    if (!clean) return;
+    Kids.state.adultName = clean;
+    Kids.save();
+    whoSheet.close();
+    updateListenBanner();
+    if (settings.mode === 'together') render();
+  }
+  $('whoOtherGo').addEventListener('click', () => setWho($('whoOther').value));
+  $('whoOther').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setWho(e.target.value); } });
+  $('turnWhoChange').addEventListener('click', askWho);
 
   function nextTurn(dir = 1) {
     if (!turnPara) return;
@@ -2032,6 +2064,7 @@
     saveSettings();
     $('turnCard').hidden = mode !== 'together';
     updateListenBanner();
+    if (mode === 'together' && Kids.on && book && !Kids.state.adultName) setTimeout(askWho, 0);
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
@@ -2593,7 +2626,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open || whoSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;

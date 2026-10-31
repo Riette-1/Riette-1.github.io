@@ -656,8 +656,11 @@ body.kids .pacer-text .said { background: #fde68a; border-radius: 6px; transitio
   border: 3px solid var(--border);
   box-shadow: var(--shadow);
 }
-.buddy-face { flex: none; position: relative; width: 96px; height: 96px; display: grid; place-items: center; font-size: 64px; border-radius: 50%; background: #fff; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.05); animation: buddy-bob 3s ease-in-out infinite; }
-.buddy-face .extra { position: absolute; top: -10px; right: -2px; font-size: 34px; transform: rotate(12deg); }
+.buddy-face { flex: none; position: relative; width: 104px; height: 104px; display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.05); animation: buddy-bob 3s ease-in-out infinite; }
+.buddy-art { display: block; width: 100%; height: 100%; overflow: visible; }
+.buddy-face .buddy-art { width: 92%; height: 92%; }
+.buddy-art.wobble { animation: egg-wobble 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes egg-wobble { 0%, 70%, 100% { transform: rotate(0); } 78% { transform: rotate(-7deg); } 86% { transform: rotate(6deg); } 93% { transform: rotate(-3deg); } }
 @keyframes buddy-bob { 50% { transform: translateY(-5px); } }
 .buddy-body { flex: 1; min-width: 0; }
 .buddy-body h2 { margin: 0 0 4px; font-size: 1.3rem; }
@@ -682,7 +685,7 @@ body.kids .pacer-text .said { background: #fde68a; border-radius: 6px; transitio
 .map-stop { fill: var(--surface); stroke: var(--border); stroke-width: 2; }
 .map-stop.done { fill: #fbbf24; stroke: #f59e0b; }
 .map-place { font-size: 28px; }
-.map-walker { font-size: 26px; }
+.map-walker { font-size: 26px; overflow: visible; }
 .map-text { margin: 4px 0 14px; font-weight: 700; color: var(--accent); }
 
 .word-jar { margin: 28px 0; }
@@ -731,17 +734,11 @@ body.mode-together #play { display: none; }
 
 /* Choosing a buddy and colours. */
 .buddy-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.buddy-face .wing { position: absolute; top: 18%; width: 46%; height: 46%; color: #ffffff; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
-.buddy-face .wing.left { left: -14%; transform: scaleX(-1) rotate(-12deg); animation: flap-l 1.2s ease-in-out infinite; }
-.buddy-face .wing.right { right: -14%; transform: rotate(-12deg); animation: flap-r 1.2s ease-in-out infinite; }
-@keyframes flap-r { 50% { transform: rotate(-30deg); } }
-@keyframes flap-l { 50% { transform: scaleX(-1) rotate(-30deg); } }
 .creature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 8px 0 16px; }
 .creature { position: relative; cursor: pointer; }
 .creature input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .creature span.card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: 22px; border: 3px solid var(--border); background: var(--surface); text-align: center; }
-.creature .pv { position: relative; width: 70px; height: 70px; display: grid; place-items: center; font-size: 48px; }
-.creature .pv .extra { position: absolute; top: -6px; right: -6px; font-size: 24px; }
+.creature .pv { position: relative; width: 96px; height: 96px; display: grid; place-items: center; }
 .creature strong { font-size: 15px; }
 .creature small { color: var(--muted); font-size: 12px; }
 .creature input:checked + span.card { border-color: var(--accent); background: var(--accent-soft); transform: scale(1.03); }
@@ -804,10 +801,19 @@ body.mode-together #play { display: none; }
 .about-notes { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .credit .ver { font-weight: 500; color: var(--muted); }
 
+.who-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 8px 0 16px; }
+.who-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: 20px; border: 3px solid var(--border); background: var(--surface); color: var(--text); font: 700 16px/1.2 var(--ui-font); cursor: pointer; }
+.who-pick .em { font-size: 40px; }
+.who-pick:hover, .who-pick:focus-visible { border-color: var(--accent); outline: none; }
+.who-other { display: flex; gap: 8px; }
+.who-other .btn { flex: none; white-space: nowrap; }
+.turn-who { padding: 4px 0; font-size: 13px; align-self: flex-start; }
+
 /* New sticker pop-up. */
 .sticker-pop { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40; background: rgba(0, 0, 0, 0.35); animation: fade-in .2s; }
 .sticker-pop .card { text-align: center; background: var(--surface); color: var(--text); border-radius: 32px; padding: 28px 32px; max-width: 300px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: pop-in .45s cubic-bezier(.2, 1.6, .4, 1); }
 .sticker-pop .em { display: block; font-size: 96px; line-height: 1.1; }
+.sticker-pop .em .buddy-art { width: 150px; height: 150px; margin: 0 auto; }
 .sticker-pop .eyebrow { margin-top: 8px; }
 .sticker-pop h3 { margin: 4px 0; font-size: 1.4rem; }
 .sticker-pop p { margin: 0 0 16px; color: var(--muted); }
@@ -824,7 +830,7 @@ body.mode-together #play { display: none; }
 
 @media (max-width: 560px) {
   .buddy-card { padding: 16px; gap: 14px; }
-  .buddy-face { width: 80px; height: 80px; font-size: 52px; }
+  .buddy-face { width: 88px; height: 88px; }
   .turn-face { font-size: 32px; }
 }
 
