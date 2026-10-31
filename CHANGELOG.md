@@ -4,6 +4,13 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.3.0 · 31 October 2026
+
+- **New logo, "boek in die hoek":** two walls meeting in a corner, with a yellow book standing in it and a
+  white book leaning on it. Replaces the moon-and-book mark on the app icon (normal, maskable and Apple),
+  the favicon and the in-app logo (top bar, welcome screen, footer). The favicon uses thicker lines so it
+  stays clear at 16 px.
+
 ## 1.2.0 · 31 October 2026
 
 - **Hand-drawn reading buddies:** the dragon, unicorn, pegasus, dinosaur and owl are now drawn in one
