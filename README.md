@@ -5,7 +5,7 @@ Countdown to christmas
 
 *Lees vinniger, uit jou gunstelinghoekie.* Geskep deur Riëtte.
 
-Current version: **1.1.1** (see [CHANGELOG.md](CHANGELOG.md)). The version is shown in the app under Settings → About Boekhoek.
+Current version: **1.2.0** (see [CHANGELOG.md](CHANGELOG.md)). The version is shown in the app under Settings → About Boekhoek.
 
 [Boekhoek](https://riette-1.github.io/boekhoek/) (previously Nook) is a browser-only speed reading app for `.epub` files, in Afrikaans with an English option. It's served from [`/speed-reader/`](https://riette-1.github.io/speed-reader/); `/boekhoek/` and `/nook/` forward there. Open or drop a book; nothing is uploaded.
 

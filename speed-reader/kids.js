@@ -67,24 +67,24 @@ const Kids = (() => {
   }
 
   // ---- The reading buddy grows with minutes read. Children pick the
-  // creature; each grows through six stages. Pegasus's wings are drawn
-  // (there's no reliable winged-horse emoji), shown with `wings: true`.
+  // creature; each grows through six stages, drawn in buddies.js. The emoji
+  // `face` is a stand-in for places that can only show text.
   const GROW_AT = [0, 10, 30, 90, 240, 600];
   const CREATURES = {
     dragon: { name: 'Dragon', pet: 'Vlammie', stages: [
-      { face: '🥚', label: 'a dragon egg' }, { face: '🦎', label: 'a tiny dragon' }, { face: '🐲', label: 'a little dragon' },
+      { face: '🥚', label: 'a dragon egg' }, { face: '🐲', label: 'a baby dragon' }, { face: '🐲', label: 'a little dragon' },
       { face: '🐉', label: 'a big dragon' }, { face: '🐉', extra: '🔥', label: 'a fire dragon' }, { face: '🐉', extra: '👑', label: 'the dragon king' }] },
     unicorn: { name: 'Unicorn', pet: 'Sterretjie', stages: [
-      { face: '✨', label: 'a sparkle' }, { face: '🐴', label: 'a little foal' }, { face: '🦄', label: 'a unicorn' },
-      { face: '🦄', extra: '🌈', label: 'a rainbow unicorn' }, { face: '🦄', extra: '⭐', label: 'a star unicorn' }, { face: '🦄', extra: '👑', label: 'the royal unicorn' }] },
+      { face: '🥚', label: 'a magic egg' }, { face: '🦄', label: 'a baby unicorn' }, { face: '🦄', label: 'a little unicorn' },
+      { face: '🦄', label: 'a unicorn' }, { face: '🦄', extra: '🌈', label: 'a rainbow unicorn' }, { face: '🦄', extra: '👑', label: 'the royal unicorn' }] },
     pegasus: { name: 'Pegasus', pet: 'Wolkie', stages: [
-      { face: '☁️', label: 'a little cloud' }, { face: '🐴', label: 'a little foal' }, { face: '🐴', wings: true, label: 'a baby pegasus' },
-      { face: '🐎', wings: true, label: 'a flying pegasus' }, { face: '🐎', wings: true, extra: '🌈', label: 'a rainbow pegasus' }, { face: '🐎', wings: true, extra: '👑', label: 'the royal pegasus' }] },
+      { face: '🥚', label: 'a cloud egg' }, { face: '🐴', label: 'a baby pegasus' }, { face: '🐴', label: 'a little pegasus' },
+      { face: '🐎', label: 'a flying pegasus' }, { face: '🐎', label: 'a sparkly pegasus' }, { face: '🐎', label: 'the royal pegasus' }] },
     dinosaur: { name: 'Dinosaur', pet: 'Dino', stages: [
-      { face: '🥚', label: 'a dino egg' }, { face: '🦎', label: 'a baby dino' }, { face: '🦕', label: 'a long-neck dino' },
+      { face: '🥚', label: 'a dino egg' }, { face: '🦖', label: 'a baby dino' }, { face: '🦖', label: 'a little dino' },
       { face: '🦖', label: 'a T-rex' }, { face: '🦖', extra: '🕶️', label: 'a cool T-rex' }, { face: '🦖', extra: '👑', label: 'the dino king' }] },
     owl: { name: 'Owl', pet: 'Uiltjie', stages: [
-      { face: '🥚', label: 'an egg' }, { face: '🐣', label: 'just hatched' }, { face: '🐥', label: 'a little chick' },
+      { face: '🥚', label: 'an egg' }, { face: '🐣', label: 'just hatched' }, { face: '🦉', label: 'a little owl' },
       { face: '🦉', label: 'a young owl' }, { face: '🦉', extra: '🎓', label: 'a wise owl' }, { face: '🦉', extra: '👑', label: 'the owl king' }] },
   };
   // Older kids' mode data grew an owl before creatures could be chosen.
@@ -262,7 +262,13 @@ const Kids = (() => {
     const end = path.getPointAtLength(len);
     svg.append(el('text', { x: end.x, y: end.y + 4, class: 'map-place', 'text-anchor': 'middle' }, place.emoji));
     const at = path.getPointAtLength((len * Math.min(100, pct)) / 100);
-    svg.append(el('text', { x: at.x, y: at.y - 6, class: 'map-walker', 'text-anchor': 'middle' }, walker));
+    if (walker && walker.nodeType === 1) {
+      for (const [k, v] of Object.entries({ x: at.x - 17, y: at.y - 36, width: 34, height: 34 })) walker.setAttribute(k, v);
+      walker.classList.add('map-walker');
+      svg.append(walker);
+    } else {
+      svg.append(el('text', { x: at.x, y: at.y - 6, class: 'map-walker', 'text-anchor': 'middle' }, walker));
+    }
     return place;
   }
 

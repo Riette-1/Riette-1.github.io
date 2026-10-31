@@ -955,7 +955,8 @@
     pop.setAttribute('aria-label', t('New sticker!'));
     const card = document.createElement('div');
     card.className = 'card';
-    const em = Object.assign(document.createElement('span'), { className: 'em', textContent: s.emoji });
+    const em = Object.assign(document.createElement('span'), { className: 'em' });
+    if (s.art) em.append(s.art); else em.textContent = s.emoji;
     const eyebrow = Object.assign(document.createElement('p'), { className: 'eyebrow', textContent: t('New sticker!') });
     const name = Object.assign(document.createElement('h3'), { textContent: t(s.name) });
     const how = Object.assign(document.createElement('p'), { textContent: t(s.how) });
@@ -1019,18 +1020,9 @@
     }));
   }
 
-  // A creature's face, with its extra (a crown, rainbow...) and drawn wings.
-  function drawBuddy(host, stage) {
-    host.replaceChildren(stage.face);
-    if (stage.wings) {
-      for (const side of ['left', 'right']) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', `wing ${side}`);
-        svg.innerHTML = '<use href="#i-wing"/>';
-        host.append(svg);
-      }
-    }
-    if (stage.extra) host.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: stage.extra }));
+  // The drawn buddy for a creature at a stage (see buddies.js).
+  function drawBuddy(host, b) {
+    host.replaceChildren(Buddies.svg(b.creature || 'owl', b.stage, b.stage === 0 ? 'wobble' : ''));
   }
 
   // ---- Choosing a creature.
@@ -1047,7 +1039,7 @@
       const pv = document.createElement('span');
       pv.className = 'pv';
       // Preview the grown-up form, so children can see what they're growing.
-      drawBuddy(pv, { ...c.stages[3] });
+      drawBuddy(pv, { creature: id, stage: 3 });
       card.append(pv, Object.assign(document.createElement('strong'), { textContent: t(c.name) }), Object.assign(document.createElement('small'), { textContent: t(c.stages[0].label) }));
       label.append(input, card);
       input.addEventListener('change', () => { if (!$('buddyName').dataset.edited) $('buddyName').value = t(c.pet); });
@@ -1324,7 +1316,8 @@
     if (m && m.total && b.key === bookKey && book) {
       for (const ch of book.chapters.slice(1)) stops.push(ch.start / m.total);
     }
-    const place = Kids.renderMap($('readingMap'), b.key, p.pct, stops, Kids.buddy().face);
+    const buddyNow = Kids.buddy();
+    const place = Kids.renderMap($('readingMap'), b.key, p.pct, stops, Buddies.svg(buddyNow.creature || 'owl', buddyNow.stage));
     $('mapText').textContent = p.finished
       ? t('You made it to {place}! 🎉', { place: t(place.name) })
       : p.started
@@ -1353,7 +1346,8 @@
     const before = Kids.buddy().stage;
     Kids.addTime(TICK);
     const earned = Kids.check('time');
-    if (Kids.buddy().stage > before) earned.unshift({ emoji: Kids.buddy().face, name: 'Your buddy grew!', how: 'Keep reading to help it grow even more.' });
+    const grown = Kids.buddy();
+    if (grown.stage > before) earned.unshift({ art: Buddies.svg(grown.creature || 'owl', grown.stage), name: 'Your buddy grew!', how: 'Keep reading to help it grow even more.' });
     if (earned.length) { if (playing) pause(); showStickers(earned); }
   }, TICK);
 
