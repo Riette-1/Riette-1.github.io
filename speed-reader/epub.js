@@ -237,7 +237,7 @@ const EPUB = (() => {
       const heading = byTag(body, 'h1')[0] || byTag(body, 'h2')[0] || byTag(body, 'h3')[0];
       const chTitle = tocTitles.get(item.path)
         || (heading && heading.textContent.replace(/\s+/g, ' ').trim())
-        || `Section ${chapters.length + 1}`;
+        || (typeof I18n !== 'undefined' ? I18n.t('Section {n}', { n: chapters.length + 1 }) : `Section ${chapters.length + 1}`);
       chapters.push({ title: chTitle.slice(0, 120), start, end: words.length });
     }
 

@@ -1,5 +1,8 @@
 (() => {
   const $ = (id) => document.getElementById(id);
+  const t = I18n.t;
+  const plural = I18n.plural;
+  I18n.apply();
 
   const store = {
     get(key, fallback) {
@@ -13,7 +16,7 @@
   const settings = Object.assign(
     {
       wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1,
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1, lang: 'af',
     },
     store.get('sr:settings', {}),
   );
@@ -68,15 +71,15 @@
   async function loadBook(file, shelfKey) {
     if (!file) return;
     pause();
-    showStatus(shelfKey ? 'Finding your bookmark…' : `Taking “${file.name.replace(/\.epub$/i, '')}” off the shelf…`);
+    showStatus(shelfKey ? t('Finding your bookmark…') : t('Taking “{name}” off the shelf…', { name: file.name.replace(/\.epub$/i, '') }));
     let loaded;
     try {
-      loaded = await EPUB.load(file, (f) => showStatus(`Turning the pages… ${Math.round(f * 100)}%`));
+      loaded = await EPUB.load(file, (f) => showStatus(t('Turning the pages… {pct}%', { pct: Math.round(f * 100) })));
     } catch (err) {
       console.error(err);
       showStatus(shelfKey
-        ? 'This book couldn’t be opened any more. Take it off the shelf and add it again.'
-        : err.message || 'Could not read this file.', true, 8000);
+        ? t('This book couldn’t be opened any more. Take it off the shelf and add it again.')
+        : t(err.message || 'Could not read this file.'), true, 8000);
       return;
     }
     showStatus('');
@@ -99,7 +102,7 @@
       Library.add({ key: bookKey, file, cover: book.cover, title: book.title, author: book.author, addedAt: Date.now() })
         .catch((err) => {
           console.warn('Could not put the book on the shelf', err);
-          showStatus('There’s no room left on this device to keep this book on the shelf, but you can still read it now.', true, 8000);
+          showStatus(t('There’s no room left on this device to keep this book on the shelf, but you can still read it now.'), true, 8000);
         });
     }
     savePos(true);
@@ -182,10 +185,11 @@
   }
 
   function finishBy(minutes) {
-    const t = new Date(Date.now() + minutes * 60000);
-    const time = t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    const sameDay = t.toDateString() === new Date().toDateString();
-    return sameDay ? `finish by ${time} today` : minutes < 60 * 24 * 6 ? `finish by ${t.toLocaleDateString(undefined, { weekday: 'long' })} ${time}` : '';
+    const end = new Date(Date.now() + minutes * 60000);
+    const time = end.toLocaleTimeString(I18n.locale(), { hour: 'numeric', minute: '2-digit' });
+    const sameDay = end.toDateString() === new Date().toDateString();
+    if (sameDay) return t('finish by {time} today', { time });
+    return minutes < 60 * 24 * 6 ? t('finish by {day} {time}', { day: end.toLocaleDateString(I18n.locale(), { weekday: 'long' }), time }) : '';
   }
 
   async function renderHome() {
@@ -203,7 +207,7 @@
     if (!has) return;
 
     const hour = new Date().getHours();
-    $('greeting').textContent = hour < 5 ? 'Up late?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    $('greeting').textContent = t(hour < 5 ? 'Up late?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
 
     // The nightstand holds the most recently opened book.
     const cur = shelfBooks[0];
@@ -215,17 +219,18 @@
     coverInto(cover, cur);
     $('nsBar').style.width = `${p.pct}%`;
     $('nsPct').textContent = `${p.pct}%`;
-    $('nsContinueLabel').textContent = p.finished ? 'Read it again' : p.started ? 'Open to my bookmark' : 'Start reading';
+    $('nsContinueLabel').textContent = t(p.finished ? 'Read it again' : p.started ? 'Open to my bookmark' : 'Start reading');
     if (p.finished) {
-      $('nsWhere').textContent = 'Finished. Time to pick the next one from your shelf?';
+      $('nsWhere').textContent = t('Finished. Time to pick the next one from your shelf?');
     } else if (!p.started) {
-      $('nsWhere').textContent = 'Not started yet. The first page is waiting.';
+      $('nsWhere').textContent = t('Not started yet. The first page is waiting.');
     } else {
-      const when = p.left != null ? ` · ${fmtTime(p.left)} to the end, ${finishBy(p.left)}` : '';
-      $('nsWhere').textContent = `Bookmarked in ${p.chapter}${when}`.replace(/, $/, '');
+      const by = p.left != null ? finishBy(p.left) : '';
+      const when = p.left == null ? '' : by ? t(' · {left} to the end, {when}', { left: fmtTime(p.left), when: by }) : t(' · {left} to the end', { left: fmtTime(p.left) });
+      $('nsWhere').textContent = t('Bookmarked in {chapter}', { chapter: p.chapter }) + when;
     }
 
-    $('shelfCount').textContent = `${shelfBooks.length} ${shelfBooks.length === 1 ? 'book' : 'books'}`;
+    $('shelfCount').textContent = plural(shelfBooks.length, '{n} book', '{n} books');
     const grid = $('shelfGrid');
     grid.replaceChildren();
     shelfBooks.forEach((b, i) => {
@@ -237,22 +242,22 @@
       const open = document.createElement('button');
       open.className = 'sb-open';
       open.dataset.key = b.key;
-      const meta = bp.finished ? 'Finished' : !bp.started ? 'Not started' : bp.left != null ? `${bp.pct}% · ${fmtTime(bp.left)} left` : `${bp.pct}%`;
-      open.setAttribute('aria-label', `${b.title}${b.author ? ` by ${b.author}` : ''}, ${meta}`);
+      const meta = bp.finished ? t('Finished') : !bp.started ? t('Not started') : bp.left != null ? t('{pct}% · {left} left', { pct: bp.pct, left: fmtTime(bp.left) }) : `${bp.pct}%`;
+      open.setAttribute('aria-label', `${b.author ? t('{title} by {author}', { title: b.title, author: b.author }) : b.title}, ${meta}`);
       const c = document.createElement('span');
       c.className = 'sb-cover';
       coverInto(c, b);
       if (i === 0) {
         const ribbon = document.createElement('span');
         ribbon.className = 'sb-ribbon';
-        ribbon.title = 'On your nightstand';
+        ribbon.title = t('On your nightstand');
         ribbon.innerHTML = '<svg width="14" height="14"><use href="#i-bookmark"/></svg>';
         c.append(ribbon);
       }
       if (bp.finished) {
         const done = document.createElement('span');
         done.className = 'sb-done';
-        done.textContent = 'Finished';
+        done.textContent = t('Finished');
         c.append(done);
       }
       const title = document.createElement('span');
@@ -275,7 +280,9 @@
     add.className = 'shelf-book shelf-add';
     add.htmlFor = 'fileInput';
     add.setAttribute('role', 'listitem');
-    add.innerHTML = '<span class="sb-cover"><svg width="28" height="28"><use href="#i-plus"/></svg></span><span class="sb-title">Add a book</span><span class="sb-meta">EPUB from your device</span>';
+    add.innerHTML = '<span class="sb-cover"><svg width="28" height="28"><use href="#i-plus"/></svg></span><span class="sb-title"></span><span class="sb-meta"></span>';
+    add.querySelector('.sb-title').textContent = t('Add a book');
+    add.querySelector('.sb-meta').textContent = t('EPUB from your device');
     grid.append(add);
   }
 
@@ -322,10 +329,10 @@
 
   function paceChoices() {
     const p = Journal.stats().paceStats;
-    const list = [{ id: 'setting', label: 'Speed setting', wpm: settings.wpm, real: false }];
-    if (p.average) list.push({ id: 'average', label: 'Your average', wpm: p.average, real: true });
-    if (p.best) list.push({ id: 'best', label: 'Your best', wpm: p.best.wpm, real: true });
-    list.push({ id: 'custom', label: 'Custom', wpm: settings.estCustom, real: false });
+    const list = [{ id: 'setting', label: t('Speed setting'), wpm: settings.wpm, real: false }];
+    if (p.average) list.push({ id: 'average', label: t('Your average'), wpm: p.average, real: true });
+    if (p.best) list.push({ id: 'best', label: t('Your best'), wpm: p.best.wpm, real: true });
+    list.push({ id: 'custom', label: t('Custom'), wpm: settings.estCustom, real: false });
     return list;
   }
 
@@ -346,7 +353,7 @@
       const name = document.createElement('strong');
       name.textContent = c.label;
       const val = document.createElement('small');
-      val.textContent = c.id === 'custom' ? 'pick a speed' : `${c.wpm} wpm`;
+      val.textContent = c.id === 'custom' ? t('pick a speed') : t('{wpm} wpm', { wpm: c.wpm });
       box.append(name, val);
       label.append(input, box);
       host.append(label);
@@ -359,7 +366,7 @@
     const choice = paceChoices().find((c) => c.id === settings.estPace) || paceChoices()[0];
     $('bsCustomRow').hidden = choice.id !== 'custom';
     $('bsCustom').value = settings.estCustom;
-    $('bsCustomOut').textContent = `${settings.estCustom} wpm`;
+    $('bsCustomOut').textContent = t('{wpm} wpm', { wpm: settings.estCustom });
     fill($('bsCustom'));
 
     const m = b.mark;
@@ -372,27 +379,27 @@
     const whole = minutesLeftAt(m, choice.wpm, choice.real, true);
     const left = p.finished ? 0 : p.started ? minutesLeftAt(m, choice.wpm, choice.real) : whole;
     $('bsWhole').textContent = fmtTime(whole);
-    $('bsLeft').textContent = p.finished ? 'Done' : fmtTime(left);
-    $('bsLeftLabel').textContent = p.finished ? 'you finished it' : p.started ? `left to read · ${100 - p.pct}% of the book` : 'left to read';
+    $('bsLeft').textContent = p.finished ? t('Done') : fmtTime(left);
+    $('bsLeftLabel').textContent = p.finished ? t('you finished it') : p.started ? t('left to read · {pct}% of the book', { pct: 100 - p.pct }) : t('left to read');
 
     const daily = settings.dailyMinutes;
     if (p.finished) {
-      $('bsPlan').textContent = `You’ve read this one. Reading it again would take about ${fmtTime(whole)}.`;
+      $('bsPlan').textContent = t('You’ve read this one. Reading it again would take about {time}.', { time: fmtTime(whole) });
     } else if (left <= daily) {
-      $('bsPlan').textContent = `That’s a single sitting: about ${fmtTime(left)} at ${choice.wpm} wpm.`;
+      $('bsPlan').textContent = t('That’s a single sitting: about {time} at {wpm} wpm.', { time: fmtTime(left), wpm: choice.wpm });
     } else {
       const days = Math.ceil(left / daily);
       const end = new Date();
       end.setDate(end.getDate() + days - 1);
-      const when = end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-      const span = days < 14 ? `${days} days` : days < 60 ? `about ${Math.round(days / 7)} weeks` : `about ${Math.round(days / 30)} months`;
-      $('bsPlan').textContent = `At ${daily} minutes a day you’ll finish in ${span}, around ${when}.`;
+      const when = end.toLocaleDateString(I18n.locale(), { weekday: 'long', day: 'numeric', month: 'long' });
+      const span = days < 14 ? t('{n} days', { n: days }) : days < 60 ? t('about {n} weeks', { n: Math.round(days / 7) }) : t('about {n} months', { n: Math.round(days / 30) });
+      $('bsPlan').textContent = t('At {daily} minutes a day you’ll finish in {span}, around {when}.', { daily, span, when });
     }
     $('bsNote').textContent = choice.real
-      ? 'Based on your real pace from the reading journal, which already includes pauses.'
+      ? t('Based on your real pace from the reading journal, which already includes pauses.')
       : settings.pauses
-        ? 'Includes the smart pauses at punctuation, paragraphs and long words.'
-        : 'Smart pauses are off, so this is words divided by speed.';
+        ? t('Includes the smart pauses at punctuation, paragraphs and long words.')
+        : t('Smart pauses are off, so this is words divided by speed.');
   }
 
   async function openBookSheet(key) {
@@ -409,10 +416,10 @@
     const p = progressOf(b);
     $('bsBar').style.width = `${p.pct}%`;
     $('bsPct').textContent = `${p.pct}%`;
-    $('bsOpenLabel').textContent = p.finished ? 'Read it again' : p.started ? 'Open to my bookmark' : 'Start reading';
+    $('bsOpenLabel').textContent = t(p.finished ? 'Read it again' : p.started ? 'Open to my bookmark' : 'Start reading');
     renderPaceChoices();
     for (const r of document.querySelectorAll('input[name="dailyMinutes"]')) r.checked = +r.value === settings.dailyMinutes;
-    $('bsFacts').textContent = b.mark && b.mark.chapters ? '' : 'Counting the words…';
+    $('bsFacts').textContent = b.mark && b.mark.chapters ? '' : t('Counting the words…');
     renderEstimate();
     bookSheet.showModal();
 
@@ -420,12 +427,12 @@
       await ensureStats(b);
     } catch (err) {
       console.warn('Could not read book for estimates', err);
-      if (sheetBook === b) $('bsFacts').textContent = 'This book couldn’t be read to count its words.';
+      if (sheetBook === b) $('bsFacts').textContent = t('This book couldn’t be read to count its words.');
       return;
     }
     if (sheetBook !== b) return;
     const m = b.mark;
-    $('bsFacts').textContent = `${m.total.toLocaleString()} words · ${m.chapters} ${m.chapters === 1 ? 'chapter' : 'chapters'}`;
+    $('bsFacts').textContent = plural(m.chapters, '{words} words · {n} chapter', '{words} words · {n} chapters', { words: m.total.toLocaleString(I18n.locale()) });
     renderEstimate();
   }
 
@@ -459,14 +466,14 @@
 
   $('bsRemove').addEventListener('click', async () => {
     const b = sheetBook;
-    if (!b || !confirm(`Take “${b.title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.`)) return;
+    if (!b || !confirm(t('Take “{title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.', { title: b.title }))) return;
     bookSheet.close();
     await Library.remove(b.key);
     renderHome();
   });
 
   const journalEls = {
-    today: $('jToday'), streak: $('jStreak'), week: $('jWeek'), words: $('jWords'), finished: $('jFinished'), finishedLabel: $('jFinishedLabel'),
+    today: $('jToday'), streak: $('jStreak'), streakLabel: $('jStreakLabel'), week: $('jWeek'), words: $('jWords'), finished: $('jFinished'), finishedLabel: $('jFinishedLabel'),
     bars: $('jBars'), axis: $('jAxis'), max: $('jMax'), empty: $('jEmpty'),
     paceCard: {
       avg: $('pAvg'), best: $('pBest'), bestLabel: $('pBestLabel'), bestWhen: $('pBestWhen'), change: $('pChange'), changeWhen: $('pChangeWhen'),
@@ -626,7 +633,7 @@
         Journal.finished(bookKey, book.title);
         pause();
         render();
-        showStatus(`You finished “${book.title}”. Well read!`, false, 6000);
+        showStatus(t('You finished “{title}”. Well read!', { title: book.title }), false, 6000);
         return;
       }
       step();
@@ -656,7 +663,7 @@
   function play() {
     if (!book || playing || settings.mode === 'page') return;
     if (settings.mode === 'story' && !Storytime.supported) {
-      showStatus('This browser can’t read aloud. Try an up-to-date Chrome, Edge or Safari.', true, 6000);
+      showStatus(t('This browser can’t read aloud. Try an up-to-date Chrome, Edge or Safari.'), true, 6000);
       return;
     }
     playing = true;
@@ -688,7 +695,8 @@
   function setPlayIcon() {
     const btn = $('play');
     btn.querySelector('use').setAttribute('href', playing ? '#i-pause' : '#i-play');
-    btn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    btn.dataset.i18nAria = playing ? 'Pause' : 'Play';
+    btn.setAttribute('aria-label', t(btn.dataset.i18nAria));
     document.body.classList.toggle('playing', playing);
   }
 
@@ -749,10 +757,10 @@
         if (reachedEnd) {
           pos = book.words.length - 1;
           pause();
-          showStatus(`That’s the end of “${book.title}”. Sweet dreams!`, false, 6000);
+          showStatus(t('That’s the end of “{title}”. Sweet dreams!', { title: book.title }), false, 6000);
         } else {
           pause();
-          showStatus(`The voice stopped (${error || 'unknown error'}). Press play to carry on.`, true, 6000);
+          showStatus(t('The voice stopped ({error}). Press play to carry on.', { error: error || t('unknown error') }), true, 6000);
         }
       },
     });
@@ -771,7 +779,7 @@
     const lang = book && book.language;
     sel.replaceChildren();
     if (!Storytime.supported || !Storytime.voices().length) {
-      sel.add(new Option(Storytime.supported ? 'Default voice' : 'No voices on this browser', ''));
+      sel.add(new Option(t(Storytime.supported ? 'Default voice' : 'No voices on this browser'), ''));
       sel.disabled = !Storytime.supported;
       return;
     }
@@ -788,18 +796,18 @@
   function voiceHelp() {
     const ua = navigator.userAgent;
     if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
-      return 'On iPhone or iPad: Settings → Accessibility → Spoken Content → Voices → English. Download a voice marked “Enhanced” or “Premium”, such as Ava or Zoe, then pick it here.';
+      return t('On iPhone or iPad: Settings → Accessibility → Spoken Content → Voices → English. Download a voice marked “Enhanced” or “Premium”, such as Ava or Zoe, then pick it here.');
     }
     if (/Android/.test(ua)) {
-      return 'On Android: Settings → search “Text-to-speech” → Google Speech Services → Install voice data. Choose your language and download the high-quality voice, then reopen Nook.';
+      return t('On Android: Settings → search “Text-to-speech” → Google Speech Services → Install voice data. Choose your language and download the high-quality voice, then reopen Boekhoek.');
     }
     if (/Macintosh/.test(ua)) {
-      return 'On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage Voices. Download an “Enhanced” or “Premium” voice. Microsoft Edge also has very natural online voices built in.';
+      return t('On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage Voices. Download an “Enhanced” or “Premium” voice. Microsoft Edge also has very natural online voices built in.');
     }
     if (/Windows/.test(ua)) {
-      return 'On Windows, Microsoft Edge has very natural online voices built in (look for “Natural” in the list). In Chrome, the Google voices are the smoothest.';
+      return t('On Windows, Microsoft Edge has very natural online voices built in (look for “Natural” in the list). In Chrome, the Google voices are the smoothest.');
     }
-    return 'Your device’s settings may offer higher-quality voices to download. Voices marked “Natural” sound the most human.';
+    return t('Your device’s settings may offer higher-quality voices to download. Voices marked “Natural” sound the most human.');
   }
   $('voiceHelp').textContent = voiceHelp();
 
@@ -999,10 +1007,10 @@
   }
 
   function fmtTime(min) {
-    if (min < 1) return '<1 min';
+    if (min < 1) return t('<1 min');
     const h = Math.floor(min / 60);
     const m = Math.round(min % 60);
-    return h ? `${h}h ${m}m` : `${m} min`;
+    return h ? t('{h}h {m}m', { h, m }) : t('{m} min', { m });
   }
 
   function renderStats(ci) {
@@ -1011,16 +1019,27 @@
     const chLeft = minutesBetween(pos, ch.end);
     const bookLeft = minutesBetween(pos, total);
     const pct = Math.floor((pos / Math.max(1, total - 1)) * 100);
-    $('posLabel').textContent = `Chapter ${ci + 1} of ${book.chapters.length} · ${fmtTime(chLeft)} left`;
+    $('posLabel').textContent = t('Chapter {n} of {total} · {left} left', { n: ci + 1, total: book.chapters.length, left: fmtTime(chLeft) });
     const strong = document.createElement('strong');
     strong.textContent = fmtTime(bookLeft);
-    $('timeLabel').replaceChildren(strong, ` to the end · ${pct}%`);
-    $('timeLabel').title = `At ${settings.wpm} wpm you'll ${finishBy(bookLeft) || 'finish in ' + fmtTime(bookLeft)}`;
+    $('timeLabel').replaceChildren(strong, t(' to the end · {pct}%', { pct }));
+    $('timeLabel').title = t('At {wpm} wpm you\'ll {when}', { wpm: settings.wpm, when: finishBy(bookLeft) || t('finish in {time}', { time: fmtTime(bookLeft) }) });
   }
 
   // ---------- Mode & settings ----------
 
   const BACK_LABELS = { page: ['Previous page', 'Next page'], other: ['Previous sentence (←)', 'Next sentence (→)'] };
+
+  function setNavLabels() {
+    const [back, fwd] = BACK_LABELS[settings.mode === 'page' ? 'page' : 'other'];
+    for (const [id, key] of [['back', back], ['fwd', fwd]]) {
+      const el = $(id);
+      el.dataset.i18nTitle = key;
+      el.dataset.i18nAria = key.replace(/ \(.\)$/, '');
+      el.title = t(key);
+      el.setAttribute('aria-label', t(el.dataset.i18nAria));
+    }
+  }
 
   function setMode(mode) {
     if (playing) pause();
@@ -1031,13 +1050,11 @@
     if (mode === 'story' && !$('voiceTip').hidden && !settings.voiceTipShown) {
       settings.voiceTipShown = true;
       saveSettings();
-      showStatus('Tip: for a more natural voice, see Settings → Storytime.', false, 6000);
+      showStatus(t('Tip: for a more natural voice, see Settings → Storytime.'), false, 6000);
     }
     $('rsvpStage').hidden = mode !== 'rsvp';
     $('pacerStage').hidden = mode === 'rsvp';
-    const [back, fwd] = BACK_LABELS[mode === 'page' ? 'page' : 'other'];
-    $('back').title = back; $('back').setAttribute('aria-label', back);
-    $('fwd').title = fwd; $('fwd').setAttribute('aria-label', fwd);
+    setNavLabels();
     storyChunk = null;
     // Each mode draws the chapter differently, so start it afresh.
     pacerChapter = -1;
@@ -1075,6 +1092,29 @@
   };
   radios('chunk', settings.chunk, (v) => { settings.chunk = +v; saveSettings(); render(); });
   radios('pacerChunk', settings.pacerChunk, (v) => { settings.pacerChunk = +v; saveSettings(); render(); });
+  radios('lang', I18n.lang, (v) => {
+    settings.lang = v;
+    saveSettings();
+    I18n.setLang(v);
+    refreshLanguage();
+  });
+
+  // Redraw everything whose words are put together in code.
+  function refreshLanguage() {
+    setPlayIcon();
+    setNavLabels();
+    applyAppearance();
+    $('voiceHelp').textContent = voiceHelp();
+    fillVoices();
+    renderInstallCard();
+    renderDataStatus();
+    renderOfflineStatus();
+    renderHome();
+    if (book) {
+      lastChapter = -1;
+      render();
+    }
+  }
   radios('theme', settings.theme, (v) => { settings.theme = v; saveSettings(); applyAppearance(); });
 
   $('fontSize').value = settings.fontSize;
@@ -1107,21 +1147,21 @@
     let used = '';
     if (st && st.estimate) {
       const est = await st.estimate().catch(() => null);
-      if (est && est.usage) used = ` Using ${est.usage < 1e6 ? `${Math.max(1, Math.round(est.usage / 1e3))} KB` : `${(est.usage / 1e6).toFixed(1)} MB`}.`;
+      if (est && est.usage) used = t(' Using {size}.', { size: est.usage < 1e6 ? `${Math.max(1, Math.round(est.usage / 1e3))} KB` : `${(est.usage / 1e6).toFixed(1)} MB` });
     }
     if (persisted) {
-      $('dataStatus').textContent = `✓ Protected: this browser won’t clear Nook’s data by itself.${used}`;
+      $('dataStatus').textContent = t('✓ Protected: this browser won’t clear Boekhoek’s data by itself.') + used;
     } else if (isIOS && !fromHomeScreen) {
-      $('dataStatus').textContent = `Safari may clear it if you don’t visit for 7 days. Add Nook to your Home Screen to keep it safe, or keep a backup.${used}`;
+      $('dataStatus').textContent = t('Safari may clear it if you don’t visit for 7 days. Add Boekhoek to your Home Screen to keep it safe, or keep a backup.') + used;
     } else {
-      $('dataStatus').textContent = `Not protected yet: the browser could clear it if your device runs low on space.${used}`;
+      $('dataStatus').textContent = t('Not protected yet: the browser could clear it if your device runs low on space.') + used;
     }
     $('protectData').hidden = !!persisted || !(st && st.persist);
     // On iPhone, Safari and the Home Screen app each keep their own data.
     $('dataWhere').hidden = !isIOS;
     $('dataWhere').textContent = fromHomeScreen
-      ? 'You’re using Nook from your Home Screen, which keeps its own data, separate from Safari. Use a backup to move your reading between them.'
-      : 'On iPhone, Nook in Safari and Nook on your Home Screen keep separate data. Use a backup to move your reading between them.';
+      ? t('You’re using Boekhoek from your Home Screen, which keeps its own data, separate from Safari. Use a backup to move your reading between them.')
+      : t('On iPhone, Boekhoek in Safari and Boekhoek on your Home Screen keep separate data. Use a backup to move your reading between them.');
   }
 
   // ---------- Offline and installing as an app ----------
@@ -1134,8 +1174,8 @@
 
   async function renderOfflineStatus() {
     $('offlineStatus').textContent = (await offlineReady())
-      ? '✓ Works offline: Nook and your books open without internet. Looking up words still needs a connection.'
-      : 'Offline use is being set up. Open Nook once with internet and it’ll work offline after that.';
+      ? t('✓ Works offline: Boekhoek and your books open without internet. Looking up words still needs a connection.')
+      : t('Offline use is being set up. Open Boekhoek once with internet and it’ll work offline after that.');
   }
 
   if ('serviceWorker' in navigator) {
@@ -1143,7 +1183,7 @@
       navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Offline support unavailable', err));
     });
   }
-  window.addEventListener('offline', () => showStatus('You’re offline. Nook keeps working; looking up words needs internet.', false, 5000));
+  window.addEventListener('offline', () => showStatus(t('You’re offline. Boekhoek keeps working; looking up words needs internet.'), false, 5000));
 
   // Chrome, Edge and Android offer an install prompt; iPhone needs Safari's
   // Share menu, so show the steps there instead.
@@ -1158,8 +1198,8 @@
     $('installBtn').hidden = !installPrompt;
     $('installSteps').hidden = !ios || !!installPrompt;
     $('installText').textContent = ios
-      ? 'Add Nook to your Home Screen. It opens full-screen like an app, works without internet, and keeps your reading safe from Safari’s clean-up.'
-      : 'Install Nook on this device. It opens in its own window from your home screen or desktop and works without internet.';
+      ? t('Add Boekhoek to your Home Screen. It opens full-screen like an app, works without internet, and keeps your reading safe from Safari’s clean-up.')
+      : t('Install Boekhoek on this device. It opens in its own window from your home screen or desktop and works without internet.');
   }
 
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -1173,7 +1213,7 @@
     const choice = await installPrompt.userChoice.catch(() => null);
     installPrompt = null;
     renderInstallCard();
-    if (choice && choice.outcome === 'accepted') showStatus('Nook is installed. Find it with your other apps.', false, 5000);
+    if (choice && choice.outcome === 'accepted') showStatus(t('Boekhoek is installed. Find it with your other apps.'), false, 5000);
   });
   $('installDismiss').addEventListener('click', () => {
     settings.installDismissedAt = Date.now();
@@ -1185,7 +1225,7 @@
 
   $('protectData').addEventListener('click', async () => {
     const ok = await navigator.storage.persist().catch(() => false);
-    showStatus(ok ? 'Done. Your reading data is protected.' : 'Your browser didn’t allow it. Keeping a backup is the safest option.', !ok, 5000);
+    showStatus(t(ok ? 'Done. Your reading data is protected.' : 'Your browser didn’t allow it. Keeping a backup is the safest option.'), !ok, 5000);
     renderDataStatus();
   });
 
@@ -1194,10 +1234,10 @@
     savePos(true);
     try {
       const how = await Backup.save();
-      if (how !== 'cancelled') showStatus('Backup saved. Keep it somewhere safe, like Files or your email.', false, 5000);
+      if (how !== 'cancelled') showStatus(t('Backup saved. Keep it somewhere safe, like Files or your email.'), false, 5000);
     } catch (err) {
       console.error(err);
-      showStatus('The backup couldn’t be saved on this browser.', true, 5000);
+      showStatus(t('The backup couldn’t be saved on this browser.'), true, 5000);
     }
   });
 
@@ -1205,14 +1245,13 @@
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    if (!confirm('Restore this backup? It’s combined with what’s already here, so nothing on this device is lost.')) return;
+    if (!confirm(t('Restore this backup? It’s combined with what’s already here, so nothing on this device is lost.'))) return;
     try {
       const r = await Backup.restore(file);
-      const n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
-      showStatus(`Restored ${n(r.days, 'day', 'days')} of reading and ${n(r.bookmarks, 'bookmark', 'bookmarks')}.`, false, 4000);
+      showStatus(t('Restored {days} of reading and {marks}.', { days: plural(r.days, '{n} day', '{n} days'), marks: plural(r.bookmarks, '{n} bookmark', '{n} bookmarks') }), false, 4000);
       setTimeout(() => location.reload(), 1200);
     } catch (err) {
-      showStatus(err.message || 'That backup couldn’t be read.', true, 5000);
+      showStatus(t(err.message || 'That backup couldn’t be read.'), true, 5000);
     }
   });
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
@@ -1264,7 +1303,7 @@
 
   if (!wakeSupported) {
     $('keepAwake').disabled = true;
-    $('awakeNote').textContent = 'Not supported by this browser. Try an up-to-date Chrome, Edge or Safari.';
+    $('awakeNote').textContent = t('Not supported by this browser. Try an up-to-date Chrome, Edge or Safari.');
   }
 
   // Any interaction counts as "still reading" and restarts the idle countdown.
@@ -1405,7 +1444,7 @@
     shareQuote = q.text;
     $('shareQuote').textContent = shareQuote;
     $('shareSource').textContent = `— ${book.title}${book.author ? `, ${book.author}` : ''}`;
-    $('shareNote').textContent = q.cut ? `Long passages are trimmed to the first ${MAX_QUOTE_WORDS} words.` : '';
+    $('shareNote').textContent = q.cut ? t('Long passages are trimmed to the first {n} words.', { n: MAX_QUOTE_WORDS }) : '';
     $('shareCaption').value = '';
     renderSharePreview();
     shareSheet.showModal();
@@ -1437,9 +1476,9 @@
     try {
       await navigator.clipboard.writeText(shareMessage());
       finishShare();
-      showStatus('Quote copied. Paste it anywhere.', false, 3000);
+      showStatus(t('Quote copied. Paste it anywhere.'), false, 3000);
     } catch {
-      showStatus('Couldn’t copy on this browser.', true, 4000);
+      showStatus(t('Couldn’t copy on this browser.'), true, 4000);
     }
   });
   shareSheet.addEventListener('click', (e) => { if (e.target === shareSheet) shareSheet.close(); });
@@ -1455,10 +1494,23 @@
     const id = ++lookupId;
     $('defWord').textContent = word;
     $('defPhon').textContent = '';
-    $('defMore').href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}`;
+    const afrikaans = /^af\b/i.test(book.language || '');
+    $('defMore').href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}${afrikaans ? '#Afrikaans' : ''}`;
     const body = $('defBody');
-    body.innerHTML = '<p class="def-note">Looking it up…</p>';
+    const note = (text) => {
+      const p = document.createElement('p');
+      p.className = 'def-note';
+      p.textContent = text;
+      body.replaceChildren(p);
+    };
     defPop.hidden = false;
+    // The dictionary service only knows English, so Afrikaans books go
+    // straight to Wiktionary's Afrikaans entry.
+    if (afrikaans) {
+      note(t('The dictionary here only knows English words. Look up “{word}” on Wiktionary for its Afrikaans meaning.', { word }));
+      return;
+    }
+    note(t('Looking it up…'));
 
     let result;
     try {
@@ -1469,8 +1521,8 @@
       const p = document.createElement('p');
       p.className = 'def-note';
       p.textContent = navigator.onLine === false
-        ? 'You’re offline. Looking up words needs an internet connection.'
-        : 'The dictionary couldn’t be reached just now. Please try again in a moment.';
+        ? t('You’re offline. Looking up words needs an internet connection.')
+        : t('The dictionary couldn’t be reached just now. Please try again in a moment.');
       body.append(p);
       return;
     }
@@ -1479,7 +1531,7 @@
     if (!result) {
       const p = document.createElement('p');
       p.className = 'def-note';
-      p.textContent = `No definition found for “${word}”. It may be a name, or a word this English dictionary doesn’t know.`;
+      p.textContent = t('No definition found for “{word}”. It may be a name, or a word this English dictionary doesn’t know.', { word });
       body.append(p);
       return;
     }

@@ -9,6 +9,7 @@ const Journal = (() => {
   // Shorter sessions and days are too noisy to say much about pace.
   const MIN_PACE_MS = 60000;
   const SVG_NS = 'http://www.w3.org/2000/svg';
+  const tr = (key, vars) => I18n.t(key, vars);
 
   const load = () => {
     try {
@@ -170,7 +171,7 @@ const Journal = (() => {
     if (m < 60) return `${Math.round(m)} min`;
     const h = Math.floor(m / 60);
     const r = Math.round(m % 60);
-    return r ? `${h}h ${r}m` : `${h}h`;
+    return r ? tr('{h}h {m}m', { h, m: r }) : tr('{h}h', { h });
   };
 
   // Round the axis top up to a tidy number of minutes.
@@ -199,10 +200,10 @@ const Journal = (() => {
   }
 
   function renderPace(els, p) {
-    const shortDate = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    const shortDate = (d) => d.toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
     els.avg.textContent = p.average ? String(p.average) : '–';
     els.best.textContent = p.best ? String(p.best.wpm) : '–';
-    els.bestLabel.textContent = p.best && p.best.kind === 'day' ? 'best day, wpm' : 'best session, wpm';
+    els.bestLabel.textContent = tr(p.best && p.best.kind === 'day' ? 'best day, wpm' : 'best session, wpm');
     els.bestWhen.textContent = p.best ? shortDate(p.best.date) : '';
     if (p.change) {
       const sign = p.change.wpm > 0 ? '+' : p.change.wpm < 0 ? '−' : '±';
@@ -211,7 +212,7 @@ const Journal = (() => {
       els.change.classList.toggle('up', p.change.wpm > 0);
     } else {
       els.change.textContent = '–';
-      els.changeWhen.textContent = 'shows after a week of reading';
+      els.changeWhen.textContent = tr('shows after a week of reading');
       els.change.classList.remove('up');
     }
 
@@ -230,7 +231,7 @@ const Journal = (() => {
     const y = (v) => pad.t + (1 - (v - sc.min) / (sc.max - sc.min)) * (H - pad.t - pad.b);
 
     const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img',
-      'aria-label': `Reading pace per day over the last ${PACE_DAYS} days. Average ${p.average} words per minute.` });
+      'aria-label': tr('Reading pace per day over the last {days} days. Average {avg} words per minute.', { days: PACE_DAYS, avg: p.average }) });
 
     for (const t of sc.ticks) {
       root.append(svg('line', { x1: pad.l, x2: W - pad.r, y1: y(t), y2: y(t), class: 'pc-grid' }));
@@ -240,14 +241,14 @@ const Journal = (() => {
     }
     for (const [d, anchor] of [[p.from, 'start'], [p.to, 'end']]) {
       const label = svg('text', { x: x(d), y: H - 6, class: 'pc-tick', 'text-anchor': anchor });
-      label.textContent = d === p.to ? 'Today' : shortDate(d);
+      label.textContent = d === p.to ? tr('Today') : shortDate(d);
       root.append(label);
     }
 
     // Average reference line, labelled at the right.
     root.append(svg('line', { x1: pad.l, x2: W - pad.r, y1: y(p.average), y2: y(p.average), class: 'pc-avg' }));
     const avgLabel = svg('text', { x: W - pad.r, y: y(p.average) - 6, class: 'pc-avg-label', 'text-anchor': 'end' });
-    avgLabel.textContent = `average ${p.average}`;
+    avgLabel.textContent = tr('average {n}', { n: p.average });
     root.append(avgLabel);
 
     if (p.points.length > 1) {
@@ -265,7 +266,7 @@ const Journal = (() => {
     root.insertBefore(cross, root.firstChild);
     const hit = svg('rect', { x: pad.l, y: 0, width: W - pad.l - pad.r, height: H, fill: 'transparent' });
     root.append(hit);
-    const longDate = (dt) => dt.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    const longDate = (dt) => dt.toLocaleDateString(I18n.locale(), { weekday: 'short', day: 'numeric', month: 'short' });
     let active = -1;
     const show = (clientX) => {
       const r = root.getBoundingClientRect();
@@ -279,7 +280,7 @@ const Journal = (() => {
       cross.setAttribute('x1', x(pt.date));
       cross.setAttribute('x2', x(pt.date));
       cross.setAttribute('visibility', 'visible');
-      els.paceTip.textContent = `${longDate(pt.date)} · ${pt.wpm} wpm · ${fmtMinutes(pt.ms / 60000)}`;
+      els.paceTip.textContent = tr('{day} · {wpm} wpm · {time}', { day: longDate(pt.date), wpm: pt.wpm, time: fmtMinutes(pt.ms / 60000) });
       els.paceTip.hidden = false;
       els.paceTip.style.left = `${Math.min(Math.max(x(pt.date), 90), W - 90)}px`;
     };
@@ -300,18 +301,19 @@ const Journal = (() => {
     renderPace(els.paceCard, s.paceStats);
     els.today.textContent = fmtMinutes(s.today);
     els.streak.textContent = String(s.streak);
+    els.streakLabel.textContent = tr('day streak', { n: s.streak });
     els.week.textContent = fmtMinutes(s.week);
-    els.words.textContent = s.weekWords.toLocaleString();
+    els.words.textContent = s.weekWords.toLocaleString(I18n.locale());
     els.finished.textContent = String(s.finished);
-    els.finishedLabel.textContent = s.finished === 1 ? 'book finished' : 'books finished';
+    els.finishedLabel.textContent = tr(s.finished === 1 ? 'book finished' : 'books finished');
     els.empty.hidden = s.totalMinutes > 0;
 
     const max = niceMax(Math.max(1, ...s.days.map((d) => d.minutes)));
-    els.max.textContent = `${max} min`;
+    els.max.textContent = tr('{m} min', { m: max });
     els.bars.replaceChildren();
     els.axis.replaceChildren();
-    const dayName = (d) => d.toLocaleDateString(undefined, { weekday: 'short' });
-    const longDate = (d) => d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    const dayName = (d) => d.toLocaleDateString(I18n.locale(), { weekday: 'short' });
+    const longDate = (d) => d.toLocaleDateString(I18n.locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 
     s.days.forEach((d, i) => {
       const isToday = i === s.days.length - 1;
@@ -320,7 +322,7 @@ const Journal = (() => {
       col.setAttribute('role', 'listitem');
       col.tabIndex = 0;
       const mins = Math.round(d.minutes);
-      const tip = `${isToday ? 'Today' : longDate(d.date)} · ${d.minutes > 0 && mins === 0 ? '<1' : mins} min · ${d.words.toLocaleString()} words`;
+      const tip = tr('{day} · {min} min · {words} words', { day: isToday ? tr('Today') : longDate(d.date), min: d.minutes > 0 && mins === 0 ? '<1' : mins, words: d.words.toLocaleString(I18n.locale()) });
       col.dataset.tip = tip;
       col.setAttribute('aria-label', tip);
       const bar = document.createElement('span');
@@ -330,7 +332,7 @@ const Journal = (() => {
       els.bars.append(col);
 
       const label = document.createElement('span');
-      label.textContent = isToday ? 'Today' : dayName(d.date).slice(0, 2);
+      label.textContent = isToday ? tr('Today') : dayName(d.date).replace('.', '').slice(0, 2);
       if (!isToday && i % 2 === 1) label.className = 'odd';
       els.axis.append(label);
     });
