@@ -18,17 +18,19 @@
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=22" />
-  <script src="i18n.js?v=22" defer></script>
-  <script src="epub.js?v=22" defer></script>
-  <script src="library.js?v=22" defer></script>
-  <script src="journal.js?v=22" defer></script>
-  <script src="dictionary.js?v=22" defer></script>
-  <script src="storytime.js?v=22" defer></script>
-  <script src="backup.js?v=22" defer></script>
-  <script src="quiz.js?v=22" defer></script>
-  <script src="kids.js?v=22" defer></script>
-  <script src="app.js?v=22" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.1.0" />
+  <script src="version.js?v=1.1.0" defer></script>
+  <script src="i18n.js?v=1.1.0" defer></script>
+  <script src="epub.js?v=1.1.0" defer></script>
+  <script src="library.js?v=1.1.0" defer></script>
+  <script src="journal.js?v=1.1.0" defer></script>
+  <script src="dictionary.js?v=1.1.0" defer></script>
+  <script src="storytime.js?v=1.1.0" defer></script>
+  <script src="backup.js?v=1.1.0" defer></script>
+  <script src="quiz.js?v=1.1.0" defer></script>
+  <script src="kids.js?v=1.1.0" defer></script>
+  <script src="art.js?v=1.1.0" defer></script>
+  <script src="app.js?v=1.1.0" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -51,6 +53,7 @@
       <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z"/></symbol>
       <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
       <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></g></symbol>
+      <symbol id="i-wing" viewBox="0 0 40 32"><path fill="currentColor" stroke="#cbd5e1" stroke-width="1.5" stroke-linejoin="round" d="M2 26C8 14 18 6 38 2c-4 5-6 8-6 11 3-1 5-1 6 0-4 4-7 6-9 7 2 0 4 0 5 1-5 4-12 6-20 6-6 0-10-1-12-1z"/></symbol>
       <symbol id="i-nook" viewBox="6 6 52 52"><path fill="#fde68a" d="M36 9a12 12 0 1 0 10 19.5 10 10 0 1 1-10-19.5z"/><path fill="#ffffff" d="M32 37c-6-4-14-5-22-4v19c8-1 16 0 22 4zm0 0c6-4 14-5 22-4v19c-8-1-16 0-22 4z"/></symbol>
     </defs>
   </svg>
@@ -112,6 +115,7 @@
           <p id="buddyText"></p>
           <div class="buddy-bar" aria-hidden="true"><span id="buddyBar"></span></div>
           <p class="buddy-today" id="buddyToday"></p>
+          <div class="buddy-actions"><button type="button" class="btn secondary" id="chooseBuddy"></button></div>
         </div>
       </div>
       <div class="section-head">
@@ -119,6 +123,16 @@
         <span class="section-note" id="stickerCount"></span>
       </div>
       <div class="sticker-grid" id="stickerGrid" role="list"></div>
+      <div class="section-head" style="margin-top: 24px">
+        <h2 data-i18n="My art">My art</h2>
+        <button type="button" class="btn secondary" id="drawFree"><span aria-hidden="true">🎨</span> <span data-i18n="Draw something">Draw something</span></button>
+      </div>
+      <div class="art-grid" id="artGrid" role="list"></div>
+      <p class="art-empty" id="artEmpty" data-i18n="Your drawings will hang here, like in a gallery.">Your drawings will hang here, like in a gallery.</p>
+      <div class="section-head" style="margin-top: 24px">
+        <h2 data-i18n="My colours">My colours</h2>
+      </div>
+      <div class="kid-themes" id="kidThemes" role="radiogroup" aria-label="My colours"></div>
     </section>
 
     <section class="word-jar" id="wordJar" hidden aria-labelledby="jarHeading">
@@ -227,6 +241,9 @@
       <select id="chapterSelect" aria-label="Chapter"></select>
     </div>
 
+    <div class="listen-banner" id="listenBanner" hidden></div>
+    <div class="pic-bubbles" id="picBubbles" aria-hidden="true"></div>
+
     <div id="rsvpStage" class="stage rsvp">
       <div class="rsvp-frame">
         <div class="guide top"></div>
@@ -248,7 +265,7 @@
 
     <div class="turn-card" id="turnCard" hidden>
       <span class="turn-face" id="turnFace" aria-hidden="true">🧒</span>
-      <div class="turn-text"><strong id="turnWho"></strong><small id="turnHint"></small></div>
+      <div class="turn-text"><strong id="turnWho"></strong><small id="turnHint"></small><div class="scene-strip" id="sceneStrip" aria-hidden="true"></div></div>
       <button type="button" class="btn primary big" id="turnDone"><span data-i18n="Done">Done</span> ✓</button>
     </div>
 
@@ -388,6 +405,73 @@
     </form>
   </dialog>
 
+  <dialog id="drawPrompt" class="sheet draw-prompt" aria-labelledby="drawPromptTitle">
+    <form method="dialog">
+      <div class="draw-prompt-art" aria-hidden="true">🎨</div>
+      <h2 id="drawPromptTitle"></h2>
+      <p data-i18n="Show what happened, or how it made you feel.">Show what happened, or how it made you feel.</p>
+      <div class="quiz-actions">
+        <button type="button" class="btn primary big" id="drawYes"><span data-i18n="Yes, let’s draw!">Yes, let’s draw!</span> 🎨</button>
+        <button type="button" class="btn link" id="drawNo" data-i18n="Not now">Not now</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="drawSheet" class="sheet draw-sheet" aria-labelledby="drawTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="drawTitle"></h2>
+        <button type="button" class="btn round sm ghost" id="drawClose" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="canvas-wrap"><canvas id="drawCanvas" width="1200" height="900" aria-label="Drawing"></canvas></div>
+      <div class="draw-tools">
+        <div class="swatch-row" id="drawColors" role="radiogroup" aria-label="Colours"></div>
+        <div class="tool-row">
+          <div class="segmented small" role="radiogroup" aria-label="Brush size">
+            <label><input type="radio" name="brush" value="6" /><span aria-label="Thin">●</span></label>
+            <label><input type="radio" name="brush" value="16" checked /><span aria-label="Medium" style="font-size:18px">●</span></label>
+            <label><input type="radio" name="brush" value="34" /><span aria-label="Thick" style="font-size:24px">●</span></label>
+          </div>
+          <button type="button" class="btn ghost tool" id="drawEraser" aria-pressed="false"><span aria-hidden="true">🧽</span> <span data-i18n="Rubber">Rubber</span></button>
+          <button type="button" class="btn ghost tool" id="drawUndo"><span aria-hidden="true">↩️</span> <span data-i18n="Undo">Undo</span></button>
+          <button type="button" class="btn ghost tool" id="drawClear"><span aria-hidden="true">🗑️</span> <span data-i18n="Start over">Start over</span></button>
+        </div>
+        <div class="stamp-row" id="drawStamps" aria-label="Stamps"></div>
+      </div>
+      <div class="quiz-actions">
+        <button type="button" class="btn primary big" id="drawSave"><span data-i18n="Hang it in my gallery">Hang it in my gallery</span> 🖼️</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="creatureSheet" class="sheet" aria-labelledby="creatureTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="creatureTitle" data-i18n="Choose your reading buddy">Choose your reading buddy</h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <p class="pin-help" data-i18n="It grows bigger the more you read!">It grows bigger the more you read!</p>
+      <div class="creature-grid" id="creatureGrid" role="radiogroup" aria-label="Choose your reading buddy"></div>
+      <div class="field">
+        <label class="field-label" for="buddyName"><span data-i18n="Give it a name">Give it a name</span></label>
+        <input type="text" class="text-input" id="buddyName" maxlength="16" autocomplete="off" />
+      </div>
+      <div class="quiz-actions"><button type="button" class="btn primary big" id="creatureGo" data-i18n="That’s my buddy!">That’s my buddy!</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="picSheet" class="sheet pic-sheet" aria-label="Picture">
+    <form method="dialog">
+      <div class="sheet-head"><span></span><button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button></div>
+      <img id="picBig" alt="" />
+      <p id="picCaption"></p>
+      <div class="pic-actions" id="picActions" hidden>
+        <button type="button" class="btn secondary" id="artSave" data-i18n="Save to this device">Save to this device</button>
+        <button type="button" class="btn link" id="artDelete" data-i18n="Take it out of my art">Take it out of my art</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="pinSheet" class="sheet pin-sheet" aria-labelledby="pinTitle">
     <form method="dialog">
       <div class="sheet-head">
@@ -516,9 +600,11 @@
           <label class="field-label" for="adultName"><span data-i18n="Who reads together with them?">Who reads together with them?</span></label>
           <input type="text" class="text-input" id="adultName" maxlength="20" autocomplete="off" placeholder="Mamma" />
         </div>
+        <label class="toggle"><span><strong data-i18n="Draw after each chapter">Draw after each chapter</strong><small data-i18n="Offer to draw a favourite moment when a chapter ends">Offer to draw a favourite moment when a chapter ends</small></span><input type="checkbox" id="drawPrompts" /></label>
         <div class="data-actions">
           <button type="button" class="btn primary" id="kidsToggle"></button>
           <button type="button" class="btn ghost" id="changePin" hidden data-i18n="Change the PIN">Change the PIN</button>
+          <label class="btn ghost kid-only" for="fileInput"><span data-i18n="Put a book on the shelf">Put a book on the shelf</span></label>
         </div>
       </section>
 
@@ -540,6 +626,13 @@
           <input type="file" id="restoreFile" accept="application/json,.json" hidden />
         </div>
         <p class="settings-note" data-i18n="A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.">A backup keeps your journal, pace and bookmarks. Book files aren’t included, but adding a book again picks up its bookmark.</p>
+      </section>
+
+      <section class="about">
+        <h3 data-i18n="About Boekhoek">About Boekhoek</h3>
+        <p class="about-version" id="aboutVersion"></p>
+        <p class="field-label" data-i18n="What’s new in this version">What’s new in this version</p>
+        <ul class="about-notes" id="aboutNotes"></ul>
       </section>
 
       <section class="shortcuts">

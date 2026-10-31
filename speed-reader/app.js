@@ -86,7 +86,10 @@
       return;
     }
     showStatus('');
+    // Let go of the previous book's pictures.
+    if (book && book.pictures) for (const list of book.pictures.values()) for (const pic of list) URL.revokeObjectURL(pic.url);
     book = loaded;
+    greeted = false;
     bookKey = `sr:pos:${book.title}|${book.author}|${book.words.length}`;
     pos = Math.min(store.get(bookKey, 0), book.words.length - 1);
     pacerChapter = -1;
@@ -517,7 +520,12 @@
   $('goHome').addEventListener('click', goHome);
   $('brand').addEventListener('click', () => { if (book && !$('reader').hidden) goHome(); });
 
-  $('fileInput').addEventListener('change', (e) => { loadBook(e.target.files[0]); e.target.value = ''; });
+  $('fileInput').addEventListener('change', (e) => {
+    // Grown-ups add books from Settings in kids' mode; get out of the way.
+    if (dialog.open) dialog.close();
+    loadBook(e.target.files[0]);
+    e.target.value = '';
+  });
 
   ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.add('drag-over'); }));
   ['dragleave', 'drop'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.remove('drag-over'); }));
@@ -906,12 +914,18 @@
 
   // Rewards, then the quiz, then `resume`. Returns true when reading paused
   // for something; false means carry straight on.
+  const drawPromptsOn = () => Kids.on && Kids.state.drawPrompts !== false;
+
   function endOfChapter(ci, resume) {
     const earned = Kids.on ? Kids.chapterDone(isAfrikaansBook()) : [];
-    if (!earned.length && !quizFor(ci)) return false;
+    const cheer = Kids.on && settings.mode === 'story';
+    if (!earned.length && !quizFor(ci) && !cheer && !drawPromptsOn()) return false;
     pause();
     render();
-    showStickers(earned, () => { if (!offerQuiz(ci, resume)) resume(); });
+    const afterQuiz = () => offerDrawing(ci, resume);
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, afterQuiz)) afterQuiz(); });
+    if (cheer) sayAloud(chapterCheer(), next);
+    else next();
     return true;
   }
 
@@ -923,7 +937,10 @@
       showStatus(message, false, 6000);
       if (Kids.on) Kids.confetti(60);
     };
-    showStickers(earned, () => { if (!offerQuiz(ci, done)) done(); });
+    const afterQuiz = () => offerDrawing(ci, done);
+    const next = () => showStickers(earned, () => { if (!offerQuiz(ci, afterQuiz)) afterQuiz(); });
+    if (Kids.on && settings.mode === 'story') sayAloud(bookCheer(), next);
+    else next();
   }
 
   // ---------- Kids' mode ----------
@@ -955,12 +972,12 @@
 
   function renderKidsHome() {
     if (!Kids.on) return;
+    renderArt();
     const name = Kids.state.childName;
     const b = Kids.buddy();
     $('greeting').textContent = name ? t('Hello, {name}!', { name }) : t('Hello, reader!');
-    const face = $('buddyFace');
-    face.textContent = b.face;
-    if (b.extra) face.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: b.extra }));
+    drawBuddy($('buddyFace'), b);
+    $('chooseBuddy').textContent = b.chosen ? t('Change buddy') : t('Choose your buddy');
     $('buddyTitle').textContent = t('{buddy} is {stage}', { buddy: b.name, stage: t(b.label) });
     $('buddyText').textContent = b.last
       ? t('{buddy} is all grown up. Keep reading to keep them happy!', { buddy: b.name })
@@ -988,7 +1005,315 @@
       grid.append(item);
     }
     $('stickerCount').textContent = t('{got} of {total}', { got, total: Kids.STICKERS.length });
+
+    const themes = $('kidThemes');
+    themes.replaceChildren(...Kids.THEMES.map((th) => {
+      const b2 = document.createElement('button');
+      b2.type = 'button';
+      b2.className = `kid-theme t-${th.id}`;
+      b2.setAttribute('role', 'radio');
+      b2.setAttribute('aria-checked', String((Kids.state.theme || 'sunshine') === th.id));
+      b2.append(Object.assign(document.createElement('span'), { className: 'em', textContent: th.emoji }), t(th.name));
+      b2.addEventListener('click', () => { Kids.setTheme(th.id); applyAppearance(); renderKidsHome(); });
+      return b2;
+    }));
   }
+
+  // A creature's face, with its extra (a crown, rainbow...) and drawn wings.
+  function drawBuddy(host, stage) {
+    host.replaceChildren(stage.face);
+    if (stage.wings) {
+      for (const side of ['left', 'right']) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', `wing ${side}`);
+        svg.innerHTML = '<use href="#i-wing"/>';
+        host.append(svg);
+      }
+    }
+    if (stage.extra) host.append(Object.assign(document.createElement('span'), { className: 'extra', textContent: stage.extra }));
+  }
+
+  // ---- Choosing a creature.
+  const creatureSheet = $('creatureSheet');
+  function openCreatures() {
+    const current = Kids.buddy();
+    const grid = $('creatureGrid');
+    grid.replaceChildren(...Object.entries(Kids.CREATURES).map(([id, c]) => {
+      const label = document.createElement('label');
+      label.className = 'creature';
+      const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'creature', value: id, checked: current.creature === id });
+      const card = document.createElement('span');
+      card.className = 'card';
+      const pv = document.createElement('span');
+      pv.className = 'pv';
+      // Preview the grown-up form, so children can see what they're growing.
+      drawBuddy(pv, { ...c.stages[3] });
+      card.append(pv, Object.assign(document.createElement('strong'), { textContent: t(c.name) }), Object.assign(document.createElement('small'), { textContent: t(c.stages[0].label) }));
+      label.append(input, card);
+      input.addEventListener('change', () => { if (!$('buddyName').dataset.edited) $('buddyName').value = t(c.pet); });
+      return label;
+    }));
+    $('buddyName').value = Kids.state.buddyName || (current.chosen ? current.name : '');
+    delete $('buddyName').dataset.edited;
+    creatureSheet.showModal();
+  }
+  $('buddyName').addEventListener('input', (e) => { e.target.dataset.edited = '1'; });
+  $('chooseBuddy').addEventListener('click', openCreatures);
+  $('creatureGo').addEventListener('click', () => {
+    const picked = creatureSheet.querySelector('input[name="creature"]:checked');
+    if (!picked) return;
+    const c = Kids.CREATURES[picked.value];
+    Kids.chooseCreature(picked.value, $('buddyName').value || t(c.pet));
+    creatureSheet.close();
+    renderHome();
+    Kids.confetti(30);
+  });
+
+  // ---- Draw it yourself.
+  const drawPrompt = $('drawPrompt');
+  const drawSheet = $('drawSheet');
+  const canvas = $('drawCanvas');
+  const ctx = canvas.getContext('2d');
+  const PAINTS = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#92400e', '#111827', '#ffffff'];
+  const pen = { color: PAINTS[4], size: 16, eraser: false, stamp: '', drawing: false, last: null };
+  let undoStack = [];
+  let drawCtx = null;
+  let drawThen = null;
+
+  // After a chapter: ask first, so drawing never feels like homework.
+  function offerDrawing(ci, then) {
+    if (!drawPromptsOn()) { then(); return; }
+    drawThen = then;
+    drawCtx = { book: book.title, chapter: book.chapters[ci].title, ci };
+    $('drawPromptTitle').textContent = t('Want to draw your favourite moment from “{chapter}”?', { chapter: drawCtx.chapter });
+    drawPrompt.showModal();
+  }
+  $('drawYes').addEventListener('click', () => { drawPrompt.close(); openDrawing(drawCtx); });
+  $('drawNo').addEventListener('click', () => { drawPrompt.close(); finishDrawing(); });
+
+  function finishDrawing() {
+    const then = drawThen;
+    drawThen = null;
+    if (then) then();
+  }
+
+  function clearCanvas() {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Stamps: pictures from the chapter, then a few favourites.
+  function stampsFor(ci) {
+    const found = [];
+    if (book && ci != null) {
+      const ch = book.chapters[ci];
+      for (let i = ch.start; i < ch.end && found.length < 10; i++) {
+        const pic = Kids.pictureFor(book.words[i]);
+        if (pic && !found.includes(pic)) found.push(pic);
+      }
+    }
+    for (const extra of ['⭐', '🌈', '❤️', '🌸', '☀️', '🦋']) if (found.length < 14 && !found.includes(extra)) found.push(extra);
+    return found;
+  }
+
+  function openDrawing(context) {
+    drawCtx = context || { book: book ? book.title : '', chapter: '', ci: null };
+    $('drawTitle').textContent = drawCtx.chapter ? t('Draw your favourite moment from “{chapter}”', { chapter: drawCtx.chapter }) : t('Draw anything you like!');
+    clearCanvas();
+    undoStack = [];
+    pen.eraser = false;
+    pen.stamp = '';
+    $('drawEraser').setAttribute('aria-pressed', 'false');
+    $('drawColors').replaceChildren(...PAINTS.map((c) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'paint' });
+      b.style.background = c;
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', c);
+      b.setAttribute('aria-checked', String(c === pen.color));
+      b.addEventListener('click', () => {
+        pen.color = c;
+        pen.eraser = false;
+        pen.stamp = '';
+        $('drawEraser').setAttribute('aria-pressed', 'false');
+        $('drawColors').querySelectorAll('.paint').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+        $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+      });
+      return b;
+    }));
+    $('drawStamps').replaceChildren(...stampsFor(drawCtx.ci).map((pic) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'stamp', textContent: pic });
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        pen.stamp = pen.stamp === pic ? '' : pic;
+        $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', String(x === b && !!pen.stamp)));
+      });
+      return b;
+    }));
+    drawSheet.showModal();
+  }
+
+  const pointOf = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) * canvas.width) / r.width, y: ((e.clientY - r.top) * canvas.height) / r.height };
+  };
+  function saveUndo() {
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (undoStack.length > 25) undoStack.shift();
+  }
+  function line(a, b) {
+    ctx.strokeStyle = pen.eraser ? '#ffffff' : pen.color;
+    ctx.lineWidth = pen.eraser ? pen.size * 2.5 : pen.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    saveUndo();
+    const p = pointOf(e);
+    if (pen.stamp) {
+      ctx.font = `${pen.size * 6 + 40}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pen.stamp, p.x, p.y);
+      return;
+    }
+    pen.drawing = true;
+    pen.last = p;
+    line(p, { x: p.x + 0.01, y: p.y });
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pen.drawing) return;
+    const p = pointOf(e);
+    line(pen.last, p);
+    pen.last = p;
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) canvas.addEventListener(ev, () => { pen.drawing = false; });
+  for (const r of document.querySelectorAll('input[name="brush"]')) r.addEventListener('change', () => { pen.size = +r.value; });
+  $('drawEraser').addEventListener('click', () => {
+    pen.eraser = !pen.eraser;
+    pen.stamp = '';
+    $('drawEraser').setAttribute('aria-pressed', String(pen.eraser));
+    $('drawStamps').querySelectorAll('.stamp').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+  });
+  $('drawUndo').addEventListener('click', () => { const img = undoStack.pop(); if (img) ctx.putImageData(img, 0, 0); });
+  $('drawClear').addEventListener('click', () => { saveUndo(); clearCanvas(); });
+  $('drawClose').addEventListener('click', () => {
+    if (undoStack.length && !confirm(t('Stop drawing? Your picture won’t be kept.'))) return;
+    drawSheet.close();
+    finishDrawing();
+  });
+  $('drawSave').addEventListener('click', async () => {
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    try {
+      await Art.add({ blob, book: drawCtx.book, chapter: drawCtx.chapter, kid: Kids.state.childName || '' });
+    } catch {
+      showStatus(t('The drawing couldn’t be saved on this device.'), true, 5000);
+      return;
+    }
+    drawSheet.close();
+    Kids.confetti(50);
+    showStatus(t('Your picture is hanging in your gallery! 🖼️'), false, 4000);
+    renderArt();
+    showStickers(Kids.check('art'), finishDrawing);
+  });
+  $('drawFree').addEventListener('click', () => { drawThen = null; openDrawing(null); });
+
+  // ---- My art: the gallery.
+  let artUrls = [];
+  let shownArt = null;
+  async function renderArt() {
+    if (!Kids.on) return;
+    const list = await Art.all();
+    artUrls.forEach((u) => URL.revokeObjectURL(u));
+    artUrls = [];
+    $('artEmpty').hidden = list.length > 0;
+    $('artGrid').replaceChildren(...list.map((a) => {
+      const url = URL.createObjectURL(a.blob);
+      artUrls.push(url);
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'art-frame' });
+      b.setAttribute('role', 'listitem');
+      const when = new Date(a.at).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'short' });
+      const label = a.chapter || a.book || '';
+      b.setAttribute('aria-label', label ? `${label}, ${when}` : when);
+      b.append(Object.assign(document.createElement('img'), { src: url, alt: '' }), Object.assign(document.createElement('small'), { textContent: label ? `${label} · ${when}` : when }));
+      b.addEventListener('click', () => {
+        shownArt = { ...a, url };
+        $('picBig').src = url;
+        $('picBig').alt = label;
+        $('picCaption').textContent = [...new Set([a.book, a.chapter].filter(Boolean)), when].join(' · ');
+        $('picActions').hidden = false;
+        $('picSheet').showModal();
+      });
+      return b;
+    }));
+  }
+  $('picSheet').addEventListener('close', () => { $('picActions').hidden = true; shownArt = null; });
+  $('artSave').addEventListener('click', () => {
+    if (!shownArt) return;
+    const a = Object.assign(document.createElement('a'), { href: shownArt.url, download: `boekhoek-tekening-${new Date(shownArt.at).toISOString().slice(0, 10)}.png` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+  });
+  $('artDelete').addEventListener('click', async () => {
+    if (!shownArt || !confirm(t('Take this drawing out of the gallery?'))) return;
+    await Art.remove(shownArt.id);
+    $('picSheet').close();
+    renderArt();
+  });
+
+  // ---- Picture bubbles: things in the story float up as pictures.
+  let lastBubble = 0;
+  const recentBubbles = new Map();
+  function bubble(word) {
+    const pic = Kids.pictureFor(word);
+    if (!pic || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const now = Date.now();
+    if (now - lastBubble < 500 || now - (recentBubbles.get(pic) || 0) < 6000) return;
+    lastBubble = now;
+    recentBubbles.set(pic, now);
+    const b2 = Object.assign(document.createElement('span'), { textContent: pic });
+    b2.style.left = `${10 + Math.random() * 70}%`;
+    $('picBubbles').append(b2);
+    setTimeout(() => b2.remove(), 2500);
+  }
+
+  // ---- Read-along with names: in the book's language, so the voice can say it.
+  const names = () => ({ kid: Kids.state.childName, adult: Kids.state.adultName });
+  function spoken(key, vars = {}) {
+    return I18n.tIn(book.language || 'en', key, { title: book.title, ...vars });
+  }
+  function storyGreeting() {
+    const { kid, adult } = names();
+    const atStart = pos <= book.chapters[0].start + 3;
+    if (!kid) return spoken(atStart ? 'Let’s read {title}.' : 'Let’s carry on with {title}.');
+    if (!atStart) return spoken('Welcome back, {kid}! Let’s carry on with {title}.', { kid });
+    return adult
+      ? spoken('Hello {kid}! It’s time for {adult} and {kid}’s story. Today we’re reading {title}.', { kid, adult })
+      : spoken('Hello {kid}! Today we’re reading {title}.', { kid });
+  }
+  function chapterCheer() {
+    const { kid } = names();
+    return kid ? spoken('Well listened, {kid}! That’s the end of the chapter.', { kid }) : spoken('That’s the end of the chapter.');
+  }
+  function bookCheer() {
+    const { kid, adult } = names();
+    if (kid && adult) return spoken('You listened to the whole book, {kid}! {adult} will be so proud.', { kid, adult });
+    return kid ? spoken('You listened to the whole book, {kid}! Well done!', { kid }) : spoken('That’s the end of the book. Well done!');
+  }
+  function updateListenBanner() {
+    const show = Kids.on && settings.mode === 'story';
+    $('listenBanner').hidden = !show;
+    if (!show) return;
+    const { kid, adult } = names();
+    $('listenBanner').textContent = kid && adult ? t('🎧 {kid} and {adult}’s story time', { kid, adult }) : kid ? t('🎧 {kid}’s story time', { kid }) : t('🎧 Story time');
+  }
+  const sayAloud = (text, onEnd) => Storytime.say(text, { voiceURI: settings.voiceURI, lang: book.language, rate: settings.storyRate, onEnd });
 
   // The reading map on the nightstand card.
   function renderMap(b) {
@@ -1010,6 +1335,7 @@
   // ---- Tap a word to hear it.
   function sayWord(i) {
     const w = book.words[i];
+    bubble(w);
     if (!Storytime.say(w, { voiceURI: settings.voiceURI, lang: book.language, rate: 0.85 })) return;
     const span = $('pacerText').querySelector(`[data-i="${i}"]`);
     if (span) { span.classList.add('said'); setTimeout(() => span.classList.remove('said'), 1200); }
@@ -1066,6 +1392,9 @@
       const stage = $('pacerStage');
       stage.scrollTo({ top: stage.scrollTop + first.getBoundingClientRect().top - stage.getBoundingClientRect().top - 40, behavior: 'smooth' });
     }
+    const pics = [];
+    for (let i = s; i <= e && pics.length < 6; i++) { const pic = Kids.pictureFor(book.words[i]); if (pic && !pics.includes(pic)) pics.push(pic); }
+    $('sceneStrip').textContent = pics.join(' ');
     const kid = Kids.state.childName || t('you');
     const grown = Kids.state.adultName || t('the grown-up');
     $('turnCard').classList.toggle('adult', !child);
@@ -1296,8 +1625,10 @@
     applyAppearance();
     $('kidsToggle').textContent = t(Kids.on ? 'Turn kids’ mode off' : 'Turn kids’ mode on');
     $('changePin').hidden = !Kids.hasPin();
+    $('drawPrompts').checked = Kids.state.drawPrompts !== false;
     $('childName').value = Kids.state.childName;
     $('adultName').value = Kids.state.adultName;
+    updateListenBanner();
     if (!allowedModes().includes(settings.mode) && book) setMode(Kids.on ? Kids.state.mode || 'page' : 'pacer');
     else if (!allowedModes().includes(settings.mode)) settings.mode = Kids.on ? 'page' : 'pacer';
     renderHome();
@@ -1320,10 +1651,13 @@
     dialog.close();
     applyKids();
     showStatus(t('Kids’ mode is on. Settings now need the grown-up PIN.'), false, 5000);
+    // Let the child pick their creature straight away.
+    if (!Kids.buddy().chosen) openCreatures();
   });
   $('changePin').addEventListener('click', async () => {
     if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
   });
+  $('drawPrompts').addEventListener('change', (e) => { Kids.state.drawPrompts = e.target.checked; Kids.save(); });
   for (const id of ['childName', 'adultName']) {
     $(id).addEventListener('input', (e) => { Kids.state[id] = e.target.value.trim(); Kids.save(); });
   }
@@ -1349,9 +1683,14 @@
 
   let storyChapter = -1;
 
+  let greeted = false;
+
   function tell() {
     storyChapter = chapterAt(pos);
+    const intro = Kids.on && !greeted ? storyGreeting() : '';
+    greeted = true;
     Storytime.speak({
+      intro,
       words: book.words,
       isBreak,
       from: pos,
@@ -1375,6 +1714,7 @@
         if (i === pos) return;
         pos = i;
         render();
+        if (Kids.on) bubble(book.words[i]);
       },
       onDone: (reachedEnd, error) => {
         if (reachedEnd) {
@@ -1516,6 +1856,18 @@
     pacerSpans = [];
     let p = document.createElement('p');
     for (let i = ch.start; i < ch.end; i++) {
+      const pics = book.pictures && book.pictures.get(i);
+      if (pics) {
+        if (p.childNodes.length) { frag.append(p); p = document.createElement('p'); }
+        for (const pic of pics) {
+          const fig = document.createElement('figure');
+          fig.className = 'book-pic';
+          const img = Object.assign(document.createElement('img'), { src: pic.url, alt: pic.alt || '', loading: 'lazy' });
+          fig.append(img);
+          if (pic.alt) fig.append(Object.assign(document.createElement('figcaption'), { textContent: pic.alt }));
+          frag.append(fig);
+        }
+      }
       const w = book.words[i];
       const s = document.createElement('span');
       s.dataset.i = i;
@@ -1679,6 +2031,7 @@
     if (Kids.on) { Kids.state.mode = mode; Kids.save(); }
     saveSettings();
     $('turnCard').hidden = mode !== 'together';
+    updateListenBanner();
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
@@ -1707,7 +2060,7 @@
   }
 
   function applyAppearance() {
-    const theme = Kids.on ? 'kids' : settings.theme;
+    const theme = Kids.on ? `kids-${Kids.state.theme || 'sunshine'}` : settings.theme;
     if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.dataset.theme = theme;
     document.documentElement.style.setProperty('--scale', (Kids.on ? Math.max(settings.fontSize, 125) : settings.fontSize) / 100);
@@ -1744,6 +2097,7 @@
     renderInstallCard();
     renderDataStatus();
     renderOfflineStatus();
+    renderAbout();
     renderHome();
     if (book) {
       lastChapter = -1;
@@ -1769,10 +2123,17 @@
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
+  function renderAbout() {
+    const date = new Date(`${APP.date}T12:00:00`).toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+    $('aboutVersion').textContent = t('Boekhoek version {version} · {date}', { version: APP.version, date });
+    $('aboutNotes').replaceChildren(...(APP.notes[I18n.lang] || APP.notes.en).map((n) => Object.assign(document.createElement('li'), { textContent: n })));
+  }
+
   $('openSettings').addEventListener('click', async () => {
     if (Kids.on && !(await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to open Settings.'), check: true }))) return;
     renderDataStatus();
     renderOfflineStatus();
+    renderAbout();
     applyKids();
     dialog.showModal();
   });
@@ -1994,6 +2355,16 @@
   };
   $('rsvpContext').addEventListener('click', (e) => { e.stopPropagation(); jumpToWord(e); });
   $('pacerText').addEventListener('click', jumpToWord);
+  // Tap a book picture to see it big.
+  $('pacerText').addEventListener('click', (e) => {
+    const img = e.target.closest('figure.book-pic img');
+    if (!img) return;
+    if (playing) pause();
+    $('picBig').src = img.src;
+    $('picBig').alt = img.alt;
+    $('picCaption').textContent = img.alt;
+    $('picSheet').showModal();
+  });
 
   function currentSelection() {
     const sel = getSelection();
@@ -2222,7 +2593,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;

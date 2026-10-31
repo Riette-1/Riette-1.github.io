@@ -95,6 +95,8 @@ const EPUB = (() => {
   ]);
   const SKIP = new Set(['script', 'style', 'noscript', 'head', 'svg', 'math']);
 
+  // Paragraph texts in reading order, with { img, alt } entries where the
+  // chapter has a picture (an <img>, or an <image> inside an <svg>).
   function extractParagraphs(body) {
     const paras = [];
     let buf = '';
@@ -109,6 +111,19 @@ const EPUB = (() => {
           buf += n.nodeValue;
         } else if (n.nodeType === 1) {
           const tag = n.localName.toLowerCase();
+          if (tag === 'img') {
+            flush();
+            const src = n.getAttribute('src');
+            if (src) paras.push({ img: src, alt: n.getAttribute('alt') || '' });
+            continue;
+          }
+          if (tag === 'svg') {
+            for (const im of byTag(n, 'image')) {
+              const src = im.getAttribute('xlink:href') || im.getAttribute('href') || im.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+              if (src) { flush(); paras.push({ img: src, alt: '' }); }
+            }
+            continue;
+          }
           if (SKIP.has(tag)) continue;
           const block = BLOCKS.has(tag);
           if (block) flush();
@@ -177,6 +192,33 @@ const EPUB = (() => {
     }
   }
 
+  const IMAGE_TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml' };
+  const MIN_PICTURE_BYTES = 1500;
+
+  // The book's illustrations, keyed by the word they come before. Tiny files
+  // (dividers, bullets) are left out.
+  async function loadPictures(zip, pics) {
+    const byWord = new Map();
+    const urls = new Map();
+    for (const p of pics) {
+      if (!zip.has(p.path)) continue;
+      let url = urls.get(p.path);
+      if (url === undefined) {
+        url = null;
+        try {
+          const bytes = await zip.bytes(p.path);
+          const type = IMAGE_TYPES[(p.path.split('.').pop() || '').toLowerCase()];
+          if (type && bytes.length >= MIN_PICTURE_BYTES) url = URL.createObjectURL(new Blob([bytes], { type }));
+        } catch { /* skip unreadable pictures */ }
+        urls.set(p.path, url);
+      }
+      if (!url) continue;
+      if (!byWord.has(p.at)) byWord.set(p.at, []);
+      byWord.get(p.at).push({ url, alt: p.alt });
+    }
+    return byWord;
+  }
+
   async function load(file, onProgress = () => {}) {
     const zip = readZip(await file.arrayBuffer());
 
@@ -212,6 +254,8 @@ const EPUB = (() => {
 
     const words = [];
     const paraEnd = [];
+    const pics = [];
+    let pendingPics = [];
     const chapters = [];
 
     for (let i = 0; i < spine.length; i++) {
@@ -228,7 +272,13 @@ const EPUB = (() => {
 
       const start = words.length;
       for (const para of extractParagraphs(body)) {
+        if (typeof para !== 'string') {
+          pendingPics.push({ path: resolve(dirOf(item.path), para.img), alt: para.alt });
+          continue;
+        }
         const parts = para.split(' ').filter(Boolean);
+        // Pictures sit just before the words that follow them.
+        if (parts.length && pendingPics.length) { pics.push(...pendingPics.map((p) => ({ ...p, at: words.length }))); pendingPics = []; }
         for (const w of parts) { words.push(w); paraEnd.push(0); }
         if (parts.length) paraEnd[paraEnd.length - 1] = 1;
       }
@@ -242,7 +292,9 @@ const EPUB = (() => {
     }
 
     if (!words.length) throw new Error('This EPUB contains no readable text.');
-    return { title, author, language, cover, words, paraEnd: Uint8Array.from(paraEnd), chapters };
+    if (pendingPics.length) pics.push(...pendingPics.map((p) => ({ ...p, at: words.length - 1 })));
+    const pictures = await loadPictures(zip, pics);
+    return { title, author, language, cover, words, paraEnd: Uint8Array.from(paraEnd), chapters, pictures };
   }
 
   return { load };

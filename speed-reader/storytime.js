@@ -119,10 +119,17 @@ const Storytime = (() => {
   // Speak words from `from` onwards. onChunk(start, end) fires as each
   // sentence starts; onWord(i) as each word is reached (where the voice
   // reports word boundaries); onDone(reachedEnd, error) when it stops by itself.
-  function speak({ words, isBreak, from, voiceURI, lang, rate, onChunk, onWord, onDone }) {
+  function speak({ words, isBreak, from, voiceURI, lang, rate, onChunk, onWord, onDone, intro }) {
     stop();
     const id = ++session;
     const voice = pickVoice(voiceURI, lang);
+    // An optional line to say first, e.g. greeting a child by name.
+    if (intro) {
+      const u = new SpeechSynthesisUtterance(intro);
+      if (voice) { u.voice = voice; u.lang = voice.lang; }
+      u.rate = rate;
+      synth.speak(u);
+    }
     let nextStart = from;
     let queued = 0;
 
@@ -171,13 +178,18 @@ const Storytime = (() => {
   }
 
   // Say a single word or short phrase, e.g. when a child taps a word.
-  function say(text, { voiceURI, lang, rate = 0.9 } = {}) {
-    if (!supported) return false;
+  function say(text, { voiceURI, lang, rate = 0.9, onEnd } = {}) {
+    if (!supported) { if (onEnd) onEnd(); return false; }
     stop();
+    const id = session;
     const u = new SpeechSynthesisUtterance(speakable(text));
     const voice = pickVoice(voiceURI, lang);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
     u.rate = rate;
+    let done = false;
+    const finish = () => { if (done) return; done = true; if (onEnd && id === session) onEnd(); };
+    u.onend = finish;
+    u.onerror = finish;
     synth.speak(u);
     return true;
   }

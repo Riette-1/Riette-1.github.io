@@ -358,6 +358,74 @@ const I18n = (() => {
     'Great reading! Every story makes you stronger. 💪': 'Lekker gelees! Elke storie maak jou sterker. 💪',
     'Keep reading': 'Lees verder',
     'Delete': 'Vee uit',
+    // Creatures and their growing stages
+    'Dragon': 'Draak', 'Unicorn': 'Eenhoring', 'Pegasus': 'Pegasus', 'Dinosaur': 'Dinosourus', 'Owl': 'Uil',
+    'Vlammie': 'Vlammie', 'Sterretjie': 'Sterretjie', 'Wolkie': 'Wolkie', 'Dino': 'Dino',
+    'a dragon egg': '’n drakie-eier', 'a tiny dragon': '’n piepklein drakie', 'a little dragon': '’n klein drakie',
+    'a big dragon': '’n groot draak', 'a fire dragon': '’n vuurdraak', 'the dragon king': 'die drakekoning',
+    'a sparkle': '’n vonkeltjie', 'a little foal': '’n klein vulletjie', 'a unicorn': '’n eenhoring',
+    'a rainbow unicorn': '’n reënboog-eenhoring', 'a star unicorn': '’n ster-eenhoring', 'the royal unicorn': 'die koninklike eenhoring',
+    'a little cloud': '’n wolkie', 'a baby pegasus': '’n baba-pegasus', 'a flying pegasus': '’n vlieënde pegasus',
+    'a rainbow pegasus': '’n reënboog-pegasus', 'the royal pegasus': 'die koninklike pegasus',
+    'a dino egg': '’n dino-eier', 'a baby dino': '’n baba-dino', 'a long-neck dino': '’n langnek-dino',
+    'a T-rex': '’n T-rex', 'a cool T-rex': '’n cool T-rex', 'the dino king': 'die dinokoning',
+    'Royal buddy': 'Koninklike maatjie',
+    'Choose your buddy': 'Kies jou maatjie',
+    'Change buddy': 'Kies ’n ander maatjie',
+    'Choose your reading buddy': 'Kies jou leesmaatjie',
+    'It grows bigger the more you read!': 'Dit groei groter hoe meer jy lees!',
+    'Give it a name': 'Gee dit ’n naam',
+    'That’s my buddy!': 'Dis my maatjie!',
+    // Kids' themes
+    'My colours': 'My kleure',
+    'Sunshine': 'Sonskyn', 'Jungle': 'Oerwoud', 'Space': 'Ruimte', 'Candy': 'Lekkergoed',
+    // Read-along with names
+    '🎧 {kid} and {adult}’s story time': '🎧 {kid} en {adult} se storietyd',
+    '🎧 {kid}’s story time': '🎧 {kid} se storietyd',
+    '🎧 Story time': '🎧 Storietyd',
+    'Let’s read {title}.': 'Kom ons lees {title}.',
+    'Let’s carry on with {title}.': 'Kom ons lees verder in {title}.',
+    'Welcome back, {kid}! Let’s carry on with {title}.': 'Welkom terug, {kid}! Kom ons lees verder in {title}.',
+    'Hello {kid}! It’s time for {adult} and {kid}’s story. Today we’re reading {title}.': 'Hallo {kid}! Dis tyd vir {adult} en {kid} se storie. Vandag lees ons {title}.',
+    'Hello {kid}! Today we’re reading {title}.': 'Hallo {kid}! Vandag lees ons {title}.',
+    'Well listened, {kid}! That’s the end of the chapter.': 'Mooi geluister, {kid}! Dis die einde van die hoofstuk.',
+    'That’s the end of the chapter.': 'Dis die einde van die hoofstuk.',
+    'You listened to the whole book, {kid}! {adult} will be so proud.': 'Jy het na die hele boek geluister, {kid}! {adult} sal so trots wees.',
+    'You listened to the whole book, {kid}! Well done!': 'Jy het na die hele boek geluister, {kid}! Mooi so!',
+    'That’s the end of the book. Well done!': 'Dis die einde van die boek. Mooi so!',
+    'Picture': 'Prentjie',
+    // Draw it yourself
+    'Want to draw your favourite moment from “{chapter}”?': 'Wil jy jou gunsteling-oomblik uit “{chapter}” teken?',
+    'Show what happened, or how it made you feel.': 'Wys wat gebeur het, of hoe dit jou laat voel het.',
+    'Yes, let’s draw!': 'Ja, kom ons teken!',
+    'Draw your favourite moment from “{chapter}”': 'Teken jou gunsteling-oomblik uit “{chapter}”',
+    'Draw anything you like!': 'Teken net wat jy wil!',
+    'Rubber': 'Uitveër',
+    'Undo': 'Ontdoen',
+    'Start over': 'Begin oor',
+    'Hang it in my gallery': 'Hang dit in my galery',
+    'Stop drawing? Your picture won’t be kept.': 'Hou op teken? Jou prent word nie gehou nie.',
+    'The drawing couldn’t be saved on this device.': 'Die tekening kon nie op hierdie toestel gestoor word nie.',
+    'Your picture is hanging in your gallery! 🖼️': 'Jou prent hang in jou galery! 🖼️',
+    'My art': 'My kuns',
+    'Draw something': 'Teken iets',
+    'Your drawings will hang here, like in a gallery.': 'Jou tekeninge sal hier hang, soos in ’n galery.',
+    'Save to this device': 'Stoor op hierdie toestel',
+    'Take it out of my art': 'Haal dit uit my kuns',
+    'Take this drawing out of the gallery?': 'Haal hierdie tekening uit die galery?',
+    'Little artist': 'Klein kunstenaar',
+    'Draw your first picture': 'Teken jou eerste prent',
+    'Draw after each chapter': 'Teken ná elke hoofstuk',
+    'Offer to draw a favourite moment when a chapter ends': 'Bied aan om ’n gunsteling-oomblik te teken wanneer ’n hoofstuk klaar is',
+    'Drawing': 'Tekening',
+    'Colours': 'Kleure',
+    'Brush size': 'Kwasgrootte',
+    'Thin': 'Dun', 'Medium': 'Middel', 'Thick': 'Dik',
+    'Stamps': 'Stempels',
+    // Version
+    'About Boekhoek': 'Oor Boekhoek',
+    'What’s new in this version': 'Wat’s nuut in hierdie weergawe',
+    'Boekhoek version {version} · {date}': 'Boekhoek weergawe {version} · {date}',
     'Mia': 'Mia',
     'Mamma': 'Mamma',
 
@@ -423,8 +491,8 @@ const I18n = (() => {
   // Text that contains markup, keyed by name rather than by English.
   const HTML = {
     credit: {
-      en: '<strong>Boekhoek</strong> · Created by <strong>Riëtte</strong>',
-      af: '<strong>Boekhoek</strong> · Geskep deur <strong>Riëtte</strong>',
+      en: '<strong>Boekhoek</strong> <span class="ver">{version}</span> · Created by <strong>Riëtte</strong>',
+      af: '<strong>Boekhoek</strong> <span class="ver">{version}</span> · Geskep deur <strong>Riëtte</strong>',
     },
     welcome: { en: 'Welcome to Boekhoek', af: 'Welkom by Boekhoek' },
     emptyShelf: {
@@ -481,6 +549,14 @@ const I18n = (() => {
     return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
   }
 
+  // Translate into a specific language, e.g. what the voice says should
+  // match the book's language rather than the screen's.
+  function tIn(language, key, vars) {
+    const saved = lang;
+    lang = /^af\b/i.test(language || '') ? 'af' : 'en';
+    try { return t(key, vars); } finally { lang = saved; }
+  }
+
   // Pick the singular or plural form, e.g. plural(2, '{n} book', '{n} books').
   const plural = (n, one, many, vars) => t(n === 1 ? one : many, { n, ...vars });
 
@@ -488,16 +564,25 @@ const I18n = (() => {
 
   // Translate everything tagged in the page. The English originals are kept
   // in data attributes so switching back and forth always starts from them.
+  let applied = false;
+
   function apply(root = document) {
     document.documentElement.lang = lang;
+    // Attribute text from the page's own markup is collected on the first
+    // pass; labels the app builds later are translated as they're made.
+    const first = !applied;
+    applied = true;
     for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
     for (const el of root.querySelectorAll('[data-i18n-html]')) {
       const entry = HTML[el.dataset.i18nHtml];
-      if (entry) el.innerHTML = entry[lang] || entry.en;
+      if (entry) el.innerHTML = (entry[lang] || entry.en).replace('{version}', typeof APP !== 'undefined' ? APP.version : '');
     }
     for (const [attr, store] of ATTRS) {
       for (const el of root.querySelectorAll(`[${attr}]`)) {
-        if (!(store in el.dataset)) el.dataset[store] = el.getAttribute(attr);
+        if (!(store in el.dataset)) {
+          if (!first) continue;
+          el.dataset[store] = el.getAttribute(attr);
+        }
         el.setAttribute(attr, t(el.dataset[store]));
       }
     }
@@ -510,6 +595,7 @@ const I18n = (() => {
 
   return {
     t,
+    tIn,
     plural,
     apply,
     setLang,

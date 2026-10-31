@@ -13,6 +13,8 @@ const Kids = (() => {
     adultName: '',
     buddyName: '',
     mode: 'page',
+    creature: '',
+    theme: 'sunshine',
     days: {},
     stickers: {},
     chapters: 0,
@@ -64,29 +66,109 @@ const Kids = (() => {
     return n;
   }
 
-  // ---- The reading buddy grows with minutes read.
-  const STAGES = [
-    { at: 0, face: '🥚', label: 'an egg' },
-    { at: 10, face: '🐣', label: 'just hatched' },
-    { at: 30, face: '🐥', label: 'a little chick' },
-    { at: 90, face: '🦉', label: 'a young owl' },
-    { at: 240, face: '🦉', extra: '🎓', label: 'a wise owl' },
-    { at: 600, face: '🦉', extra: '👑', label: 'the owl king' },
-  ];
-  function buddy() {
+  // ---- The reading buddy grows with minutes read. Children pick the
+  // creature; each grows through six stages. Pegasus's wings are drawn
+  // (there's no reliable winged-horse emoji), shown with `wings: true`.
+  const GROW_AT = [0, 10, 30, 90, 240, 600];
+  const CREATURES = {
+    dragon: { name: 'Dragon', pet: 'Vlammie', stages: [
+      { face: '🥚', label: 'a dragon egg' }, { face: '🦎', label: 'a tiny dragon' }, { face: '🐲', label: 'a little dragon' },
+      { face: '🐉', label: 'a big dragon' }, { face: '🐉', extra: '🔥', label: 'a fire dragon' }, { face: '🐉', extra: '👑', label: 'the dragon king' }] },
+    unicorn: { name: 'Unicorn', pet: 'Sterretjie', stages: [
+      { face: '✨', label: 'a sparkle' }, { face: '🐴', label: 'a little foal' }, { face: '🦄', label: 'a unicorn' },
+      { face: '🦄', extra: '🌈', label: 'a rainbow unicorn' }, { face: '🦄', extra: '⭐', label: 'a star unicorn' }, { face: '🦄', extra: '👑', label: 'the royal unicorn' }] },
+    pegasus: { name: 'Pegasus', pet: 'Wolkie', stages: [
+      { face: '☁️', label: 'a little cloud' }, { face: '🐴', label: 'a little foal' }, { face: '🐴', wings: true, label: 'a baby pegasus' },
+      { face: '🐎', wings: true, label: 'a flying pegasus' }, { face: '🐎', wings: true, extra: '🌈', label: 'a rainbow pegasus' }, { face: '🐎', wings: true, extra: '👑', label: 'the royal pegasus' }] },
+    dinosaur: { name: 'Dinosaur', pet: 'Dino', stages: [
+      { face: '🥚', label: 'a dino egg' }, { face: '🦎', label: 'a baby dino' }, { face: '🦕', label: 'a long-neck dino' },
+      { face: '🦖', label: 'a T-rex' }, { face: '🦖', extra: '🕶️', label: 'a cool T-rex' }, { face: '🦖', extra: '👑', label: 'the dino king' }] },
+    owl: { name: 'Owl', pet: 'Uiltjie', stages: [
+      { face: '🥚', label: 'an egg' }, { face: '🐣', label: 'just hatched' }, { face: '🐥', label: 'a little chick' },
+      { face: '🦉', label: 'a young owl' }, { face: '🦉', extra: '🎓', label: 'a wise owl' }, { face: '🦉', extra: '👑', label: 'the owl king' }] },
+  };
+  // Older kids' mode data grew an owl before creatures could be chosen.
+  const creatureId = () => state.creature || (totalMinutes() > 0 ? 'owl' : '');
+
+  function buddy(id = creatureId()) {
+    const c = CREATURES[id] || CREATURES.owl;
     const m = totalMinutes();
     let i = 0;
-    while (i < STAGES.length - 1 && m >= STAGES[i + 1].at) i++;
-    const next = STAGES[i + 1];
-    const from = STAGES[i].at;
+    while (i < GROW_AT.length - 1 && m >= GROW_AT[i + 1]) i++;
+    const next = GROW_AT[i + 1];
     return {
-      ...STAGES[i],
+      ...c.stages[i],
+      creature: id,
+      chosen: !!state.creature || id === 'owl',
       stage: i,
-      last: i === STAGES.length - 1,
-      toNext: next ? Math.max(1, Math.ceil(next.at - m)) : 0,
-      progress: next ? (m - from) / (next.at - from) : 1,
-      name: state.buddyName || tr('Uiltjie'),
+      last: i === GROW_AT.length - 1,
+      toNext: next != null ? Math.max(1, Math.ceil(next - m)) : 0,
+      progress: next != null ? (m - GROW_AT[i]) / (next - GROW_AT[i]) : 1,
+      name: state.buddyName || tr(c.pet),
     };
+  }
+
+  function chooseCreature(id, name) {
+    if (!CREATURES[id]) return;
+    state.creature = id;
+    state.buddyName = (name || '').trim();
+    save();
+  }
+
+  // ---- Kids' themes, picked by the child.
+  const THEMES = [
+    { id: 'sunshine', name: 'Sunshine', emoji: '☀️' },
+    { id: 'ocean', name: 'Ocean', emoji: '🐠' },
+    { id: 'jungle', name: 'Jungle', emoji: '🌴' },
+    { id: 'space', name: 'Space', emoji: '🚀' },
+    { id: 'candy', name: 'Candy', emoji: '🍭' },
+  ];
+  function setTheme(id) {
+    if (!THEMES.some((th) => th.id === id)) return;
+    state.theme = id;
+    save();
+  }
+
+  // ---- Picture bubbles: story words that have a picture, in English and
+  // Afrikaans. Plurals and simple endings are folded onto the base word.
+  const PICTURES = {
+    '🐶': 'dog dogs puppy puppies hond honde hondjie hondjies', '🐱': 'cat cats kitten kittens kat katte katjie katjies',
+    '🐭': 'mouse mice muis muise', '🐰': 'rabbit rabbits bunny bunnies haas hase hasie hasies konyn',
+    '🦊': 'fox foxes jakkals', '🐻': 'bear bears teddy beer bere', '🐼': 'panda pandas', '🦁': 'lion lions leeu leeus',
+    '🐯': 'tiger tigers tier tiere', '🐘': 'elephant elephants olifant olifante', '🦒': 'giraffe giraffes kameelperd',
+    '🦓': 'zebra zebras sebra', '🐵': 'monkey monkeys aap ape', '🐴': 'horse horses perd perde', '🐮': 'cow cows koei koeie',
+    '🐷': 'pig pigs vark varke', '🐑': 'sheep lamb skaap skape lam', '🐔': 'chicken chickens hen hoender hoenders',
+    '🦆': 'duck ducks eend eende', '🦉': 'owl owls uil uile', '🐦': 'bird birds voël voëls', '🐸': 'frog frogs padda paddas',
+    '🐢': 'turtle tortoise skilpad', '🐍': 'snake snakes slang slange', '🐟': 'fish vis visse', '🐋': 'whale whales walvis',
+    '🐬': 'dolphin dolphins dolfyn', '🦈': 'shark shark haai haaie', '🐙': 'octopus seekat', '🦀': 'crab krap',
+    '🐝': 'bee bees by bye', '🦋': 'butterfly butterflies skoenlapper', '🐌': 'snail slak', '🐞': 'ladybird ladybug liewenheersbesie',
+    '🕷️': 'spider spiders spinnekop', '🐉': 'dragon dragons draak drake', '🦄': 'unicorn unicorns eenhoring',
+    '🦖': 'dinosaur dinosaurs dino dinosourus', '👑': 'king queen prince princess crown koning koningin prins prinses kroon',
+    '🧙': 'wizard witch towenaar heks', '🧚': 'fairy fairies fee feetjie', '👻': 'ghost ghosts spook', '🤖': 'robot robots',
+    '👽': 'alien aliens ruimtewese', '🧜': 'mermaid meermin', '🏴‍☠️': 'pirate pirates seerower seerowers', '🦸': 'hero superhero held',
+    '👶': 'baby babies baba', '👵': 'grandmother granny grandma ouma', '👴': 'grandfather grandpa oupa',
+    '🏰': 'castle palace kasteel paleis', '🏠': 'house home huis huise', '🏫': 'school skool', '⛪': 'church kerk',
+    '🌳': 'tree trees forest wood boom bome bos woud', '🌸': 'flower flowers blom blomme', '🌻': 'sunflower sonneblom',
+    '🍄': 'mushroom sampioen', '⛰️': 'mountain mountains berg berge', '🌋': 'volcano vulkaan', '🏖️': 'beach strand',
+    '🌊': 'sea ocean wave waves see oseaan golf golwe', '🏝️': 'island eiland', '🏞️': 'river rivier', '🏜️': 'desert woestyn',
+    '🌙': 'moon night maan nag', '⭐': 'star stars ster sterre', '☀️': 'sun sunny son sonnig', '🌈': 'rainbow reënboog',
+    '☁️': 'cloud clouds wolk wolke', '🌧️': 'rain rainy reën', '❄️': 'snow snowflake sneeu', '⛈️': 'storm thunder lightning storm donderweer weerlig',
+    '🔥': 'fire flame flames vuur vlam vlamme', '💧': 'water', '🚀': 'rocket rockets vuurpyl', '🛸': 'spaceship ruimteskip',
+    '🚗': 'car cars motor kar', '🚌': 'bus', '🚂': 'train trein', '✈️': 'plane aeroplane airplane vliegtuig',
+    '⛵': 'boat ship sail boot skip', '🚲': 'bicycle bike fiets', '🎈': 'balloon balloons ballon ballonne',
+    '🎂': 'cake birthday koek verjaarsdag', '🍎': 'apple apples appel appels', '🍌': 'banana piesang', '🍪': 'cookie cookies koekie koekies',
+    '🍞': 'bread brood', '🍯': 'honey heuning', '🥕': 'carrot carrots wortel', '🍦': 'ice-cream roomys', '🍕': 'pizza',
+    '🎁': 'present gift presents geskenk', '💎': 'treasure jewel gem skat juweel', '🗝️': 'key keys sleutel',
+    '🗺️': 'map kaart', '📚': 'book books boek boeke', '✏️': 'pencil potlood', '⚽': 'ball soccer football bal sokker',
+    '🎵': 'song music sing lied musiek', '💤': 'sleep asleep slaap', '😢': 'cried cry crying sad huil hartseer',
+    '😂': 'laughed laugh laughing lag', '❤️': 'love heart liefde hart', '🛏️': 'bed', '🚪': 'door deur',
+  };
+  const PICTURE_OF = new Map();
+  for (const [emoji, list] of Object.entries(PICTURES)) for (const w of list.split(' ')) PICTURE_OF.set(w, emoji);
+  function pictureFor(word) {
+    const w = word.toLowerCase().replace(/^[^\p{L}]+|[^\p{L}-]+$/gu, '').replace(/['’]s$/, '');
+    if (!w || w.length < 3) return '';
+    return PICTURE_OF.get(w) || PICTURE_OF.get(w.replace(/(es|s)$/, '')) || PICTURE_OF.get(w.replace(/(tjies|tjie|jies|jie|e)$/, '')) || '';
   }
 
   // ---- Stickers. Each has a test against the reading so far.
@@ -104,7 +186,8 @@ const Kids = (() => {
     { id: 'streak7', emoji: '🌈', name: 'Rainbow week', how: 'Read 7 days in a row', test: () => streak() >= 7 },
     { id: 'three-books', emoji: '🏆', name: 'Book collector', how: 'Finish 3 books', test: (s) => Object.keys(s.books).length >= 3 },
     { id: 'word-match', emoji: '🎯', name: 'Word wizard', how: 'Win a game of word match', test: (s, e) => e === 'game' },
-    { id: 'owl-king', emoji: '👑', name: 'Owl royalty', how: 'Grow your buddy all the way', test: () => buddy().last },
+    { id: 'artist', emoji: '🎨', name: 'Little artist', how: 'Draw your first picture', test: (s, e) => e === 'art' },
+    { id: 'owl-king', emoji: '👑', name: 'Royal buddy', how: 'Grow your buddy all the way', test: () => buddy().last },
   ];
 
   // Award any stickers newly earned by this event; returns them.
@@ -240,6 +323,11 @@ const Kids = (() => {
     totalMinutes,
     streak,
     buddy,
+    CREATURES,
+    chooseCreature,
+    THEMES,
+    setTheme,
+    pictureFor,
     STICKERS,
     check,
     chapterDone,
