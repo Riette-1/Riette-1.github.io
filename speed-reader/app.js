@@ -1395,13 +1395,51 @@
     const pics = [];
     for (let i = s; i <= e && pics.length < 6; i++) { const pic = Kids.pictureFor(book.words[i]); if (pic && !pics.includes(pic)) pics.push(pic); }
     $('sceneStrip').textContent = pics.join(' ');
-    const kid = Kids.state.childName || t('you');
+    const kid = Kids.state.childName;
     const grown = Kids.state.adultName || t('the grown-up');
+    const cap = (text) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
     $('turnCard').classList.toggle('adult', !child);
-    $('turnFace').textContent = child ? '🧒' : '🧑';
-    $('turnWho').textContent = child ? t('Your turn, {name}!', { name: kid }) : t('{name}’s turn!', { name: grown });
+    $('turnFace').textContent = child ? '🧒' : faceFor(Kids.state.adultName);
+    $('turnWho').textContent = cap(child ? (kid ? t('Your turn, {name}!', { name: kid }) : t('Your turn!')) : t('{name}’s turn!', { name: grown }));
     $('turnHint').textContent = child ? t('Read the orange part out loud.') : t('Listen while {name} reads the blue part.', { name: grown });
   }
+
+  // A face that fits who's reading with the child.
+  function faceFor(name) {
+    const n = (name || '').toLowerCase();
+    if (/^(mamma|ma|mom|mommy|mum|mummy|mother|moeder|mams)$/.test(n)) return '👩';
+    if (/^(pappa|pa|dad|daddy|father|vader|paps)$/.test(n)) return '👨';
+    if (/^(ouma|granny|grandma|gran|nana)$/.test(n)) return '👵';
+    if (/^(oupa|grandpa|grandad)$/.test(n)) return '👴';
+    return '🧑‍🦱';
+  }
+
+  // ---- Who's reading with the child? Asked when it isn't known yet, and
+  // easy to change when someone else takes a turn tonight.
+  const whoSheet = $('whoSheet');
+  function askWho() {
+    const people = [['Mom', '👩'], ['Dad', '👨'], ['Granny', '👵'], ['Grandpa', '👴']];
+    $('whoGrid').replaceChildren(...people.map(([key, em]) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'who-pick' });
+      b.append(Object.assign(document.createElement('span'), { className: 'em', textContent: em }), t(key));
+      b.addEventListener('click', () => setWho(t(key)));
+      return b;
+    }));
+    $('whoOther').value = '';
+    whoSheet.showModal();
+  }
+  function setWho(name) {
+    const clean = (name || '').trim();
+    if (!clean) return;
+    Kids.state.adultName = clean;
+    Kids.save();
+    whoSheet.close();
+    updateListenBanner();
+    if (settings.mode === 'together') render();
+  }
+  $('whoOtherGo').addEventListener('click', () => setWho($('whoOther').value));
+  $('whoOther').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setWho(e.target.value); } });
+  $('turnWhoChange').addEventListener('click', askWho);
 
   function nextTurn(dir = 1) {
     if (!turnPara) return;
@@ -2032,6 +2070,7 @@
     saveSettings();
     $('turnCard').hidden = mode !== 'together';
     updateListenBanner();
+    if (mode === 'together' && Kids.on && book && !Kids.state.adultName) setTimeout(askWho, 0);
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
@@ -2593,7 +2632,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !defPop.hidden) { closeDefinition(); return; }
-    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open) return;
+    if (!book || $('reader').hidden || e.ctrlKey || e.metaKey || e.altKey || dialog.open || bookSheet.open || shareSheet.open || quizSheet.open || pinSheet.open || wordSheet.open || matchSheet.open || creatureSheet.open || $('picSheet').open || drawSheet.open || drawPrompt.open || whoSheet.open) return;
     const tag = e.target.tagName;
     if (tag === 'BUTTON' && e.key === ' ') e.target.blur();
     if ((tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') || tag === 'SELECT' || tag === 'TEXTAREA') return;
