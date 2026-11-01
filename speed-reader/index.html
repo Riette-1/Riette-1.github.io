@@ -14,24 +14,24 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="icon" href="icons/favicon.svg?v=1.3.0" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-32.png?v=1.3.0" sizes="32x32" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.3.0" />
+  <link rel="icon" href="icons/favicon.svg?v=1.4.0" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-32.png?v=1.4.0" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.4.0" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=1.3.0" />
-  <script src="version.js?v=1.3.0" defer></script>
-  <script src="i18n.js?v=1.3.0" defer></script>
-  <script src="epub.js?v=1.3.0" defer></script>
-  <script src="library.js?v=1.3.0" defer></script>
-  <script src="journal.js?v=1.3.0" defer></script>
-  <script src="dictionary.js?v=1.3.0" defer></script>
-  <script src="storytime.js?v=1.3.0" defer></script>
-  <script src="backup.js?v=1.3.0" defer></script>
-  <script src="quiz.js?v=1.3.0" defer></script>
-  <script src="buddies.js?v=1.3.0" defer></script>
-  <script src="kids.js?v=1.3.0" defer></script>
-  <script src="art.js?v=1.3.0" defer></script>
-  <script src="app.js?v=1.3.0" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.4.0" />
+  <script src="version.js?v=1.4.0" defer></script>
+  <script src="i18n.js?v=1.4.0" defer></script>
+  <script src="epub.js?v=1.4.0" defer></script>
+  <script src="library.js?v=1.4.0" defer></script>
+  <script src="journal.js?v=1.4.0" defer></script>
+  <script src="dictionary.js?v=1.4.0" defer></script>
+  <script src="storytime.js?v=1.4.0" defer></script>
+  <script src="backup.js?v=1.4.0" defer></script>
+  <script src="quiz.js?v=1.4.0" defer></script>
+  <script src="buddies.js?v=1.4.0" defer></script>
+  <script src="kids.js?v=1.4.0" defer></script>
+  <script src="art.js?v=1.4.0" defer></script>
+  <script src="app.js?v=1.4.0" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -208,7 +208,7 @@
     </section>
 
     <section class="install-card adult-only" id="installCard" hidden aria-labelledby="installTitle">
-      <img class="install-icon" src="icons/icon-192.png?v=1.3.0" alt="" width="64" height="64" />
+      <img class="install-icon" src="icons/icon-192.png?v=1.4.0" alt="" width="64" height="64" />
       <div class="install-body">
         <h2 id="installTitle" data-i18n-html="installTitle"></h2>
         <p id="installText" data-i18n="Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.">Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.</p>
@@ -238,6 +238,10 @@
         <button role="tab" class="tab" data-mode="story" aria-selected="false"><span class="adult-only" data-i18n="Storytime">Storytime</span><span class="kid-only" data-i18n="Read to me">Read to me</span></button>
         <button role="tab" class="tab kid-only" data-mode="together" aria-selected="false" data-i18n="Read together">Read together</button>
       </div>
+      <div class="segmented page-style" id="pageStyle" role="group" aria-label="How the pages move">
+        <button type="button" class="tab" data-turn="0" aria-pressed="true" title="Scroll down through the chapter"><span aria-hidden="true">↕</span> <span data-i18n="Scroll">Scroll</span></button>
+        <button type="button" class="tab" data-turn="1" aria-pressed="false" title="Turn the pages like a book"><span aria-hidden="true">↔</span> <span data-i18n="Turn pages">Turn pages</span></button>
+      </div>
       <select id="chapterSelect" aria-label="Chapter"></select>
     </div>
 
@@ -261,6 +265,7 @@
         <h2 class="chapter-title" id="pacerTitle"></h2>
         <div class="pacer-text" id="pacerText"></div>
       </div>
+      <span class="page-num" id="pageNum" aria-live="polite"></span>
     </div>
 
     <div class="turn-card" id="turnCard" hidden>

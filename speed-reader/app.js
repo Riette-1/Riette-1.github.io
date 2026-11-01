@@ -16,7 +16,7 @@
   const settings = Object.assign(
     {
       wpm: 300, chunk: 1, pauses: true, ramp: true, bionic: false, fontSize: 100, theme: 'auto', mode: 'pacer', keepAwake: true,
-      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1, lang: 'af', quizzes: false,
+      estPace: 'setting', estCustom: 400, dailyMinutes: 20, storyRate: 1, voiceURI: '', pacerChunk: 1, lang: 'af', quizzes: false, pageTurn: false,
     },
     store.get('sr:settings', {}),
   );
@@ -1934,6 +1934,12 @@
     clearPacerHighlight();
     if (!pageScrollPending) return;
     pageScrollPending = false;
+    if (settings.pageTurn) {
+      layoutPages();
+      const span = pacerSpans[pos - book.chapters[ci].start];
+      goToPage(span && pos > book.chapters[ci].start ? pageOf(span) : 0, false, false);
+      return;
+    }
     const span = pacerSpans[pos - book.chapters[ci].start];
     const stage = $('pacerStage');
     pageScrolling = true;
@@ -1959,7 +1965,7 @@
 
   let pageScrollTimer = 0;
   $('pacerStage').addEventListener('scroll', () => {
-    if (settings.mode !== 'page' || !book || pageScrolling || !pacerSpans.length) return;
+    if (settings.mode !== 'page' || settings.pageTurn || !book || pageScrolling || !pacerSpans.length) return;
     clearTimeout(pageScrollTimer);
     pageScrollTimer = setTimeout(() => {
       pos = wordAtTopOfPage();
@@ -1974,8 +1980,12 @@
 
   function turnPage(dir) {
     const stage = $('pacerStage');
-    const atEnd = stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 4;
-    const atStart = stage.scrollTop <= 0;
+    const turning = settings.pageTurn;
+    if (turning) countPages();
+    if (turning && dir > 0 && pageAt < pageCount - 1) return goToPage(pageAt + 1, true, true);
+    if (turning && dir < 0 && pageAt > 0) return goToPage(pageAt - 1, true, true);
+    const atEnd = turning || stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 4;
+    const atStart = turning || stage.scrollTop <= 0;
     const ci = chapterAt(pos);
     // Past the edge of a chapter, carry on into the next or previous one.
     if (dir > 0 && atEnd && ci < book.chapters.length - 1) {
@@ -1987,8 +1997,150 @@
       endOfBook(ci, t('You finished “{title}”. Well read!', { title: book.title }));
       return;
     }
-    if (dir < 0 && atStart && ci > 0) return seek(book.chapters[ci - 1].start);
+    // Turning back into the previous chapter opens it at its last page.
+    if (dir < 0 && atStart && ci > 0) return seek(turning ? book.chapters[ci - 1].end - 1 : book.chapters[ci - 1].start);
+    if (turning) return;
     stage.scrollBy({ top: dir * stage.clientHeight * 0.85, behavior: 'smooth' });
+  }
+
+  // ---------- Page mode, turning pages ----------
+  // The chapter flows into CSS columns exactly one page wide (see
+  // body.page-turn in style.css); page k is shown by sliding the text k page
+  // widths to the left. The bookmark is the first word on the page.
+
+  let pageW = 1;
+  let pageCount = 1;
+  let pageAt = 0;
+
+  function layoutPages() {
+    const stage = $('pacerStage');
+    const inner = stage.firstElementChild;
+    const w = stage.clientWidth;
+    // Comfortable margins, and lines no longer than on the scrolling page.
+    const pad = Math.max(Math.min(48, Math.max(18, w * 0.05)), (w - 680) / 2);
+    inner.style.setProperty('--pad', `${pad}px`);
+    inner.style.setProperty('--col', `${w - 2 * pad}px`);
+    inner.style.setProperty('--page-h', `${stage.clientHeight}px`);
+    pageW = Math.max(1, w);
+  }
+
+  function countPages() {
+    const last = pacerSpans[pacerSpans.length - 1];
+    pageCount = last ? pageOf(last) + 1 : 1;
+  }
+
+  function pageOf(el) {
+    const origin = $('pacerStage').firstElementChild.getBoundingClientRect().left;
+    return Math.max(0, Math.floor((el.getBoundingClientRect().left - origin + 1) / pageW));
+  }
+
+  function firstWordOnPage(k) {
+    let lo = 0;
+    let hi = pacerSpans.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (pageOf(pacerSpans[mid]) < k) lo = mid + 1; else hi = mid;
+    }
+    return book.chapters[pacerChapter].start + lo;
+  }
+
+  function goToPage(k, animate, movesBookmark) {
+    const inner = $('pacerStage').firstElementChild;
+    countPages();
+    pageAt = Math.max(0, Math.min(pageCount - 1, k));
+    inner.style.transition = animate ? '' : 'none';
+    inner.style.transform = `translateX(${-pageAt * pageW}px)`;
+    if (!animate) void inner.offsetWidth;
+    inner.style.transition = '';
+    $('pageNum').textContent = t('page {n} of {total}', { n: pageAt + 1, total: pageCount });
+    if (!movesBookmark) return;
+    pos = firstWordOnPage(pageAt);
+    const ci = chapterAt(pos);
+    $('progress').value = pos;
+    fill($('progress'));
+    renderStats(ci);
+    savePos(true);
+  }
+
+  // Lay the pages out again (new size, new text size, a picture loaded),
+  // staying on the page that holds the bookmark.
+  function keepPlace() {
+    if (!book || settings.mode !== 'page') return;
+    pageScrollPending = true;
+    renderPage(chapterAt(pos));
+  }
+  // When the page itself changes size (phone turned, the reader shown).
+  let relayoutTimer = 0;
+  new ResizeObserver(() => {
+    if (!settings.pageTurn) return;
+    clearTimeout(relayoutTimer);
+    relayoutTimer = setTimeout(keepPlace, 100);
+  }).observe($('pacerStage'));
+  $('pacerText').addEventListener('load', () => { if (settings.pageTurn) keepPlace(); }, true);
+  // The reading font can arrive after the pages are laid out.
+  if (document.fonts) document.fonts.addEventListener('loadingdone', () => { if (settings.pageTurn) keepPlace(); });
+
+  function applyPageStyle() {
+    const on = settings.mode === 'page' && settings.pageTurn;
+    document.body.classList.toggle('page-turn', on);
+    // The other modes scroll the same text, so put it back in place.
+    if (!on) $('pacerStage').firstElementChild.style.transform = '';
+    $('pageStyle').querySelectorAll('[data-turn]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.turn === +settings.pageTurn)));
+  }
+  $('pageStyle').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-turn]');
+    if (!b || +b.dataset.turn === +settings.pageTurn) return;
+    settings.pageTurn = b.dataset.turn === '1';
+    saveSettings();
+    applyPageStyle();
+    keepPlace();
+  });
+
+  // Swipe left or right to turn the page.
+  let swipe = null;
+  $('pacerStage').addEventListener('touchstart', (e) => {
+    swipe = e.touches.length === 1 && settings.pageTurn && settings.mode === 'page'
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY, at: Date.now() } : null;
+  }, { passive: true });
+  $('pacerStage').addEventListener('touchmove', (e) => { if (e.touches.length > 1) swipe = null; }, { passive: true });
+  $('pacerStage').addEventListener('touchend', (e) => {
+    if (!swipe) return;
+    const tch = e.changedTouches[0];
+    const dx = tch.clientX - swipe.x;
+    const dy = tch.clientY - swipe.y;
+    const quick = Date.now() - swipe.at < 800;
+    swipe = null;
+    const sel = getSelection();
+    if (!quick || Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5 || (sel && !sel.isCollapsed)) return;
+    e.preventDefault();
+    turnPage(dx < 0 ? 1 : -1);
+  });
+
+  // ---------- Pinch the text to make it bigger or smaller ----------
+
+  let pinch = null;
+  const spread = (e) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  for (const stage of [$('pacerStage'), $('rsvpStage')]) {
+    stage.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) pinch = { d: Math.max(1, spread(e)), size: settings.fontSize };
+    }, { passive: true });
+    stage.addEventListener('touchmove', (e) => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const size = Math.max(70, Math.min(160, Math.round((pinch.size * spread(e)) / pinch.d / 10) * 10));
+      if (size === settings.fontSize) return;
+      settings.fontSize = size;
+      $('fontSize').value = size;
+      applyAppearance();
+      keepPlace();
+      showStatus(t('Text size {n}%', { n: size }), false, 1200);
+    }, { passive: false });
+    stage.addEventListener('touchend', (e) => {
+      if (!pinch || e.touches.length > 1) return;
+      pinch = null;
+      saveSettings();
+      if (book && settings.mode !== 'page') render();
+    });
   }
 
   function clearPacerHighlight() {
@@ -2065,7 +2217,7 @@
     $('turnCard').hidden = mode !== 'together';
     updateListenBanner();
     if (mode === 'together' && Kids.on && book && !Kids.state.adultName) setTimeout(askWho, 0);
-    document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
+    document.querySelectorAll('.tab[data-mode]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
     for (const m of MODES) document.body.classList.toggle(`mode-${m}`, m === mode);
     if (mode === 'story' && !Kids.on && !$('voiceTip').hidden && !settings.voiceTipShown) {
       settings.voiceTipShown = true;
@@ -2079,6 +2231,7 @@
     // Each mode draws the chapter differently, so start it afresh.
     pacerChapter = -1;
     pageScrollPending = true;
+    applyPageStyle();
     render();
   }
 
@@ -2140,7 +2293,7 @@
   radios('theme', settings.theme, (v) => { settings.theme = v; saveSettings(); applyAppearance(); });
 
   $('fontSize').value = settings.fontSize;
-  $('fontSize').addEventListener('input', (e) => { settings.fontSize = +e.target.value; saveSettings(); applyAppearance(); });
+  $('fontSize').addEventListener('input', (e) => { settings.fontSize = +e.target.value; saveSettings(); applyAppearance(); keepPlace(); });
 
   for (const id of ['pauses', 'ramp', 'bionic', 'keepAwake', 'quizzes']) {
     $(id).checked = settings[id];
@@ -2153,7 +2306,7 @@
     });
   }
 
-  document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
+  document.querySelectorAll('.tab[data-mode]').forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   const dialog = $('settings');
   function renderAbout() {
