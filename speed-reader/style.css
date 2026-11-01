@@ -1188,6 +1188,28 @@ body.mode-story .story-controls { display: flex; }
 body.mode-story .speed { display: none; }
 /* Page mode is read at your own pace: no play button, the arrows turn pages. */
 body.mode-page #play { display: none; }
+
+/* Page mode can scroll or turn pages. The switch only shows in Page mode. */
+.page-style { display: none; }
+.page-style .tab { white-space: nowrap; }
+body.mode-page .page-style { display: inline-flex; }
+.tab[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+/* Turning pages: the chapter flows into columns exactly one page wide, and
+   turning a page slides the next column into view. */
+body.page-turn .pacer { overflow: hidden; scroll-behavior: auto; position: relative; }
+body.page-turn .pacer-inner {
+  max-width: none; height: 100%; box-sizing: border-box; margin: 0;
+  padding: 28px var(--pad, 24px) 34px;
+  column-width: var(--col, 600px); column-gap: calc(2 * var(--pad, 24px)); column-fill: auto;
+  transition: transform .32s cubic-bezier(.2, .7, .2, 1); will-change: transform;
+}
+body.page-turn .pacer-text figure.book-pic { break-inside: avoid; }
+body.page-turn .pacer-text figure.book-pic img { max-height: calc(var(--page-h, 600px) - 150px); }
+body.page-turn .pacer-text p { orphans: 2; widows: 2; }
+.page-num { position: absolute; right: 16px; bottom: 9px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; display: none; }
+body.page-turn .page-num { display: block; }
+/* Two-finger pinch on the text changes the text size, not the whole page. */
+.pacer, .rsvp { touch-action: pan-x pan-y; }
 .pacer-text .speaking { background: var(--accent-soft); border-radius: 0; box-shadow: 0.3em 0 0 var(--accent-soft); }
 .pacer-text .cur.speaking { background: var(--highlight); border-radius: 4px; box-shadow: 0 0 0 3px var(--highlight); }
 .speed-value { display: flex; flex-direction: column; align-items: center; line-height: 1; min-width: 46px; }
@@ -1349,6 +1371,8 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
   .mode-bar { flex-wrap: wrap; gap: 8px; }
   .mode-bar .segmented { width: 100%; }
   .mode-bar .tab { flex: 1; padding: 9px 4px; text-align: center; }
+  .mode-bar .page-style { width: auto; flex: none; }
+  .mode-bar .page-style .tab { padding: 9px 12px; white-space: nowrap; }
   .dock-end { display: none; }
   .awake { padding: 7px; }
   .btn.round { width: 46px; height: 46px; }
@@ -1371,5 +1395,6 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body.page-turn .pacer-inner { transition: none; }
   * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }

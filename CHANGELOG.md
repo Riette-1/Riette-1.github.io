@@ -4,6 +4,18 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.4.0 · 1 November 2026
+
+- **Turn pages in Page mode:** a new *Scroll / Turn pages* (*Rol / Blaai*) switch above the text. With
+  *Turn pages*, the chapter is laid out in pages the size of the screen (CSS columns); swipe left or right,
+  or use the arrow buttons or keys, to slide to the next or previous page. Turning past the last page goes
+  on to the next chapter (with its quiz, if quizzes are on), and turning back from the first page opens
+  the previous chapter at its last page. The page number shows in the corner, and the bookmark is the
+  first word on the page. The choice is remembered.
+- **Pinch to change the text size:** spread two fingers on the text to make it bigger, pinch to make it
+  smaller (70% to 160%, the same as Settings → Text size). Works in every reading mode, and Page mode
+  stays on the same place in the book.
+
 ## 1.3.0 · 31 October 2026
 
 - **New logo, "boek in die hoek":** two walls meeting in a corner, with a yellow book standing in it and a
