@@ -4,6 +4,12 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.8.2 · 4 November 2026
+
+- **Removing books in Kinderhoekie:** each book on the kids' shelf has a small ✕ in its corner. It asks
+  for the grown-up PIN, then the same "Take off the shelf?" question as on the grown-ups' shelf. The
+  bookmark is kept, as before. Grown-up books are not affected.
+
 ## 1.8.1 · 4 November 2026
 
 - **More books in Kinderhoekie:** the kids' bookshelf now ends with an *Add a book* tile marked

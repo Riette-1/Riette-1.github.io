@@ -439,6 +439,9 @@ body.drag-over .dropzone { border-color: var(--accent); background: var(--accent
   box-shadow: var(--shadow);
 }
 .shelf-book { position: relative; min-width: 0; }
+/* Kinderhoekie: the grown-ups' remove button in the corner of each book. */
+.sb-remove { position: absolute; top: -8px; right: -8px; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); background: var(--surface-2); color: var(--muted); box-shadow: var(--shadow); cursor: pointer; }
+.sb-remove:hover, .sb-remove:focus-visible { color: var(--text); outline: 2px solid var(--accent); outline-offset: 1px; }
 .sb-open, .shelf-add {
   display: flex;
   flex-direction: column;
