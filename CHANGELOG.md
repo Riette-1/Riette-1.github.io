@@ -4,6 +4,19 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.8.0 · 4 November 2026
+
+- **Switching between grown-ups and kids is on the home screen:** a *Grown-ups / Kinderhoekie* switch
+  sits at the top of the reading nook.
+  - The first time, Kinderhoekie opens a short welcome that asks for the child's name and who reads
+    with them, then a PIN, then the child picks a reading buddy.
+  - After that, tapping Kinderhoekie goes straight in. Tapping Grown-ups asks for the PIN (shown with a
+    🔒).
+  - The switch in Settings still works too.
+- **Adding a book in Kinderhoekie:** the empty kids' shelf has a *Grown-ups: add a book* button that asks
+  for the PIN and opens the file picker, without going through Settings.
+- The kids' welcome screen no longer shows the grown-up speed-reading text.
+
 ## 1.7.0 · 4 November 2026
 
 - **Separate shelves for kids and grown-ups:** every book now belongs to the shelf it was added on.

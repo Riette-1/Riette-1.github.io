@@ -2,17 +2,17 @@
 // bump it, add an entry to CHANGELOG.md, and set the same ?v= on the files
 // index.html loads (so phones fetch the matching code).
 const APP = {
-  version: '1.7.0',
+  version: '1.8.0',
   date: '2026-11-04',
   // What's new in this version, shown in Settings.
   notes: {
     en: [
-      'Kids’ mode and grown-up mode now have separate bookshelves: books added in kids’ mode only show in kids’ mode, and the other way round.',
-      'Grown-ups can hand a book to the kids with “Move to the kids’ shelf” on the book’s card.',
+      'A “Grown-ups / Kinderhoekie” switch at the top of the reading nook. The first time, it asks for names and a PIN; going back to grown-ups needs the PIN.',
+      'In Kinderhoekie, a grown-up can add a book straight from the home screen with the PIN.',
     ],
     af: [
-      'Kindermodus en grootmensmodus het nou elk hul eie boekrak: boeke wat in kindermodus bygevoeg is, wys net in kindermodus, en andersom.',
-      'Grootmense kan ’n boek vir die kinders gee met “Skuif na die kinders se rak” op die boek se kaart.',
+      '’n “Grootmense / Kinderhoekie”-skakelaar bo-aan die leeshoekie. Die eerste keer vra dit name en ’n PIN; terug na grootmense vra die PIN.',
+      'In Kinderhoekie kan ’n grootmens met die PIN ’n boek reg van die tuisskerm af byvoeg.',
     ],
   },
 };

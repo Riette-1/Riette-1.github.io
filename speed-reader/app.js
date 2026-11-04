@@ -1678,6 +1678,7 @@
 
   // ---- Switching kids' mode on and off.
   function applyKids() {
+    renderWhoSwitch();
     // The open book belongs to the other shelf: put it away first.
     if (book && bookShelf !== currentShelf()) {
       pause();
@@ -1704,25 +1705,58 @@
     renderHome();
   }
 
-  $('kidsToggle').addEventListener('click', async () => {
-    if (Kids.on) {
-      Kids.on = false;
-      settings.mode = settings.adultMode || 'pacer';
-      saveSettings();
-      dialog.close();
-      applyKids();
-      return;
-    }
+  function kidsOff() {
+    Kids.on = false;
+    settings.mode = settings.adultMode || 'pacer';
+    saveSettings();
+    if (dialog.open) dialog.close();
+    applyKids();
+    showStatus(t('Welcome back, grown-up.'), false, 3000);
+  }
+
+  async function kidsOn() {
     if (!Kids.hasPin() && !(await chooseNewPin())) return;
     settings.adultMode = settings.mode;
     settings.mode = 'page';
     saveSettings();
     Kids.on = true;
-    dialog.close();
+    if (dialog.open) dialog.close();
     applyKids();
     showStatus(t('Kids’ mode is on. Settings now need the grown-up PIN.'), false, 5000);
     // Let the child pick their creature straight away.
     if (!Kids.buddy().chosen) openCreatures();
+  }
+
+  $('kidsToggle').addEventListener('click', () => (Kids.on ? kidsOff() : kidsOn()));
+
+  // The switch at the top of the reading nook. The first time, a short
+  // welcome asks for names before the PIN; leaving kids' mode needs the PIN.
+  function renderWhoSwitch() {
+    for (const b of $('whoSwitch').querySelectorAll('[data-who]')) b.setAttribute('aria-pressed', String((b.dataset.who === 'kids') === Kids.on));
+  }
+  const kidsSetup = $('kidsSetup');
+  $('whoSwitch').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-who]');
+    if (!b || (b.dataset.who === 'kids') === Kids.on) return;
+    if (Kids.on) {
+      if (await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to leave Kinderhoekie.'), check: true })) kidsOff();
+      return;
+    }
+    if (Kids.hasPin()) { kidsOn(); return; }
+    $('setupChild').value = Kids.state.childName || '';
+    $('setupAdult').value = Kids.state.adultName || '';
+    kidsSetup.showModal();
+  });
+  $('setupGo').addEventListener('click', () => {
+    Kids.state.childName = $('setupChild').value.trim();
+    Kids.state.adultName = $('setupAdult').value.trim();
+    Kids.save();
+    kidsSetup.close();
+    kidsOn();
+  });
+  // In kids' mode, a grown-up can add a book with the PIN, without Settings.
+  $('kidsAddBook').addEventListener('click', async () => {
+    if (await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to add a book.'), check: true })) $('fileInput').click();
   });
   $('changePin').addEventListener('click', async () => {
     if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
