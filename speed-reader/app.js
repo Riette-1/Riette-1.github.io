@@ -679,7 +679,7 @@
 
   function play() {
     if (!book || playing || settings.mode === 'page' || settings.mode === 'together') return;
-    if (settings.mode === 'story' && !Storytime.supported) {
+    if (settings.mode === 'story' && !Storytime.supported && !Storytime.usesAI(settings.voiceURI, book.language)) {
       showStatus(t('This browser can’t read aloud. Try an up-to-date Chrome, Edge or Safari.'), true, 6000);
       return;
     }
@@ -1719,6 +1719,9 @@
 
   function tell() {
     storyChapter = chapterAt(pos);
+    if (Storytime.usesAI(settings.voiceURI, book.language) && !AIVoice.state().warm) {
+      showStatus(t('Getting the AI voice ready…'), false, 5000);
+    }
     const intro = Kids.on && !greeted ? storyGreeting() : '';
     greeted = true;
     Storytime.speak({
@@ -1772,15 +1775,15 @@
     const sel = $('storyVoice');
     const lang = book && book.language;
     sel.replaceChildren();
-    if (!Storytime.supported || !Storytime.voices().length) {
+    const list = Storytime.shortlist(lang);
+    if (!list.length) {
       sel.add(new Option(t(Storytime.supported ? 'Default voice' : 'No voices on this browser'), ''));
       sel.disabled = !Storytime.supported;
       return;
     }
     sel.disabled = false;
-    const list = Storytime.shortlist(lang);
     const chosen = Storytime.pickVoice(settings.voiceURI, lang);
-    if (chosen && !list.includes(chosen)) list.push(chosen);
+    if (chosen && !list.some((v) => v.voiceURI === chosen.voiceURI)) list.push(chosen);
     for (const v of list) sel.add(new Option(Storytime.describe(v), v.voiceURI));
     if (chosen) sel.value = chosen.voiceURI;
     $('voiceTip').hidden = list.some(Storytime.isNatural);
@@ -1813,6 +1816,56 @@
     if (playing && settings.mode === 'story') tell();
   });
   Storytime.onVoicesChanged(fillVoices);
+
+  // ---- The AI voice (English): download, progress, try it, remove it.
+  function renderAIVoice() {
+    const box = $('aiVoice');
+    box.hidden = !AIVoice.supported;
+    if (box.hidden) return;
+    const { state, pct, error } = AIVoice.state();
+    const busy = state === 'downloading';
+    $('aiBadge').textContent = state === 'ready' ? t('On this device ✓') : busy ? `${pct}%` : '';
+    $('aiProgress').hidden = !busy;
+    $('aiBar').style.width = `${pct}%`;
+    $('aiDownload').hidden = state === 'ready';
+    $('aiDownload').disabled = busy;
+    $('aiDownload').textContent = busy ? t('Downloading…') : t('Download the AI voice');
+    $('aiTry').hidden = state !== 'ready';
+    $('aiRemove').hidden = state !== 'ready';
+    const msg = error ? t('The AI voice couldn’t load ({error}). Check the internet connection and try again.', { error })
+      : busy ? t('Keep Boekhoek open until it’s done.') : '';
+    $('aiStatus').textContent = msg;
+    $('aiStatus').hidden = !msg;
+  }
+  let aiWasReady = AIVoice.ready();
+  AIVoice.onChange(() => {
+    renderAIVoice();
+    const ready = AIVoice.ready();
+    if (ready && !aiWasReady) {
+      // Switch Storytime to the new voice straight away.
+      settings.voiceURI = AIVoice.uriOf(AIVoice.VOICES[0]);
+      saveSettings();
+      fillVoices();
+      showStatus(t('The AI voice is ready. Storytime will use it for English books.'), false, 6000);
+    }
+    if (!ready && aiWasReady) fillVoices();
+    aiWasReady = ready;
+  });
+  $('aiDownload').addEventListener('click', () => AIVoice.download());
+  $('aiTry').addEventListener('click', () => {
+    if (playing) pause();
+    const uri = AIVoice.isAI(settings.voiceURI) ? settings.voiceURI : AIVoice.uriOf(AIVoice.VOICES[0]);
+    if (!AIVoice.state().warm) showStatus(t('Getting the AI voice ready…'), false, 5000);
+    // The AI voice only speaks English, so the sample is always in English.
+    AIVoice.say('Once upon a time, in a cosy little reading nook, a story was waiting to be told.', { voiceURI: uri, rate: settings.storyRate });
+  });
+  $('aiRemove').addEventListener('click', async () => {
+    if (!confirm(t('Remove the AI voice from this device? You can download it again any time.'))) return;
+    if (playing) pause();
+    await AIVoice.remove();
+    showStatus(t('The AI voice was removed.'), false, 4000);
+  });
+  renderAIVoice();
   fillVoices();
   setStoryRate(settings.storyRate);
 
@@ -2224,6 +2277,8 @@
       saveSettings();
       showStatus(t('Tip: for a more natural voice, see Settings → Storytime.'), false, 6000);
     }
+    // Wake the AI voice up early, so it's ready when play is pressed.
+    if (mode === 'story' && book && Storytime.usesAI(settings.voiceURI, book.language)) AIVoice.download();
     $('rsvpStage').hidden = mode !== 'rsvp';
     $('pacerStage').hidden = mode === 'rsvp';
     setNavLabels();

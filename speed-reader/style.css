@@ -1345,6 +1345,13 @@ body.page-turn .page-num { display: block; }
 .settings-note { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--muted); }
 .settings-note strong { color: var(--text); }
 .data-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.ai-voice { margin: 4px 0 14px; padding: 14px; border-radius: 16px; background: var(--surface-2); }
+.ai-voice-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.ai-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.ai-badge:empty { display: none; }
+.ai-progress { height: 8px; border-radius: 999px; background: var(--surface); overflow: hidden; margin: 4px 0 10px; }
+.ai-progress span { display: block; height: 100%; width: 0; background: var(--grad); border-radius: inherit; transition: width .3s; }
+.ai-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .settings-note.warn { color: var(--text); background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; }
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 14px; }
 .shortcuts dt { white-space: nowrap; }
