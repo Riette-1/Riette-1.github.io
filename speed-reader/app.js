@@ -290,6 +290,17 @@
       bar.append(barFill);
       open.append(c, title, m, bar);
       item.append(open);
+      // Kinderhoekie: a small locked button for grown-ups to take a book away.
+      if (Kids.on) {
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'sb-remove';
+        rm.dataset.remove = b.key;
+        rm.title = t('Take off the shelf (grown-ups)');
+        rm.setAttribute('aria-label', `${t('Take off the shelf (grown-ups)')}: ${b.title}`);
+        rm.innerHTML = '<svg width="14" height="14"><use href="#i-x"/></svg>';
+        item.append(rm);
+      }
       grid.append(item);
     });
 
@@ -323,7 +334,13 @@
     openFromShelf(cur.key);
   });
 
-  $('shelfGrid').addEventListener('click', (e) => {
+  $('shelfGrid').addEventListener('click', async (e) => {
+    const rm = e.target.closest('.sb-remove');
+    if (rm) {
+      const b = shelfBooks.find((x) => x.key === rm.dataset.remove);
+      if (b && await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to take a book off the shelf.'), check: true })) removeFromShelf(b);
+      return;
+    }
     const open = e.target.closest('.sb-open');
     if (open && Kids.on) openFromShelf(open.dataset.key);
     else if (open) openBookSheet(open.dataset.key);
@@ -502,12 +519,22 @@
     renderHome();
   });
 
-  $('bsRemove').addEventListener('click', async () => {
-    const b = sheetBook;
-    if (!b || !confirm(t('Take “{title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.', { title: b.title }))) return;
-    bookSheet.close();
+  async function removeFromShelf(b) {
+    if (!confirm(t('Take “{title}” off your shelf? The book is removed from this device. Its bookmark and your reading journal are kept.', { title: b.title }))) return false;
+    if (book && bookKey === b.key) {
+      if (book.pictures) for (const list of book.pictures.values()) for (const pic of list) URL.revokeObjectURL(pic.url);
+      book = null;
+      bookKey = '';
+    }
     await Library.remove(b.key);
     renderHome();
+    return true;
+  }
+  $('bsRemove').addEventListener('click', async () => {
+    const b = sheetBook;
+    if (!b) return;
+    bookSheet.close();
+    await removeFromShelf(b);
   });
 
   const journalEls = {
