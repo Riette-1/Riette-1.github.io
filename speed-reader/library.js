@@ -56,14 +56,15 @@ const Library = (() => {
   const openedAt = () => ls.get('sr:opened', {});
 
   return {
-    // All books, most recently opened first.
-    async books() {
+    // The books on one shelf ("kids" or "adult"), most recently opened
+    // first. Books from before there were two shelves are grown-ups' books.
+    async books(shelf) {
       await ready;
       let all = [];
       try { all = await run('readonly', (s) => s.getAll()); } catch { return []; }
       const opened = openedAt();
       return all
-        .filter((b) => b && b.key && b.file)
+        .filter((b) => b && b.key && b.file && (!shelf || (b.shelf || 'adult') === shelf))
         .map((b) => ({ ...b, mark: ls.get(markKey(b.key)), opened: opened[b.key] || b.addedAt || 0 }))
         .sort((a, b) => b.opened - a.opened);
     },
@@ -78,6 +79,21 @@ const Library = (() => {
       const opened = openedAt();
       delete opened[key];
       ls.set('sr:opened', opened);
+    },
+    // Put a book on the other shelf under its new key, with its bookmark.
+    async move(key, newKey, shelf) {
+      await ready;
+      const rec = await run('readonly', (s) => s.get(key));
+      if (!rec) return;
+      await run('readwrite', (s) => {
+        s.put({ ...rec, key: newKey, shelf }, newKey);
+        return s.delete(key);
+      });
+      const mark = ls.get(markKey(key));
+      if (mark && !ls.get(markKey(newKey))) ls.set(markKey(newKey), mark);
+      ls.remove(markKey(key));
+      const opened = openedAt();
+      if (opened[key]) { opened[newKey] = opened[key]; delete opened[key]; ls.set('sr:opened', opened); }
     },
     touch(key) {
       const opened = openedAt();

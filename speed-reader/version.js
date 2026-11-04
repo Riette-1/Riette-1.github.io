@@ -2,15 +2,17 @@
 // bump it, add an entry to CHANGELOG.md, and set the same ?v= on the files
 // index.html loads (so phones fetch the matching code).
 const APP = {
-  version: '1.6.0',
+  version: '1.8.0',
   date: '2026-11-04',
   // What's new in this version, shown in Settings.
   notes: {
     en: [
-      'A natural AI voice for English books in Storytime. Download it once in Settings → Storytime (about 115 MB, best on Wi-Fi), and it works offline after that. Five voices: Heart, Bella, Emma, Michael and George.',
+      'A “Grown-ups / Kinderhoekie” switch at the top of the reading nook. The first time, it asks for names and a PIN; going back to grown-ups needs the PIN.',
+      'In Kinderhoekie, a grown-up can add a book straight from the home screen with the PIN.',
     ],
     af: [
-      '’n Natuurlike KI-stem vir Engelse boeke in Storietyd. Laai dit een keer af in Instellings → Storietyd (omtrent 115 MB, beste op Wi-Fi), en dit werk daarna sonder internet. Vyf stemme: Heart, Bella, Emma, Michael en George.',
+      '’n “Grootmense / Kinderhoekie”-skakelaar bo-aan die leeshoekie. Die eerste keer vra dit name en ’n PIN; terug na grootmense vra die PIN.',
+      'In Kinderhoekie kan ’n grootmens met die PIN ’n boek reg van die tuisskerm af byvoeg.',
     ],
   },
 };

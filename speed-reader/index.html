@@ -14,25 +14,25 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="icon" href="icons/favicon.svg?v=1.6.0" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-32.png?v=1.6.0" sizes="32x32" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.6.0" />
+  <link rel="icon" href="icons/favicon.svg?v=1.8.0" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-32.png?v=1.8.0" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.8.0" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=1.6.0" />
-  <script src="version.js?v=1.6.0" defer></script>
-  <script src="i18n.js?v=1.6.0" defer></script>
-  <script src="epub.js?v=1.6.0" defer></script>
-  <script src="library.js?v=1.6.0" defer></script>
-  <script src="journal.js?v=1.6.0" defer></script>
-  <script src="dictionary.js?v=1.6.0" defer></script>
-  <script src="aivoice.js?v=1.6.0" defer></script>
-  <script src="storytime.js?v=1.6.0" defer></script>
-  <script src="backup.js?v=1.6.0" defer></script>
-  <script src="quiz.js?v=1.6.0" defer></script>
-  <script src="buddies.js?v=1.6.0" defer></script>
-  <script src="kids.js?v=1.6.0" defer></script>
-  <script src="art.js?v=1.6.0" defer></script>
-  <script src="app.js?v=1.6.0" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.8.0" />
+  <script src="version.js?v=1.8.0" defer></script>
+  <script src="i18n.js?v=1.8.0" defer></script>
+  <script src="epub.js?v=1.8.0" defer></script>
+  <script src="library.js?v=1.8.0" defer></script>
+  <script src="journal.js?v=1.8.0" defer></script>
+  <script src="dictionary.js?v=1.8.0" defer></script>
+  <script src="aivoice.js?v=1.8.0" defer></script>
+  <script src="storytime.js?v=1.8.0" defer></script>
+  <script src="backup.js?v=1.8.0" defer></script>
+  <script src="quiz.js?v=1.8.0" defer></script>
+  <script src="buddies.js?v=1.8.0" defer></script>
+  <script src="kids.js?v=1.8.0" defer></script>
+  <script src="art.js?v=1.8.0" defer></script>
+  <script src="app.js?v=1.8.0" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -72,6 +72,10 @@
   </header>
 
   <main id="welcome" class="welcome">
+    <div class="who-switch" id="whoSwitch" role="group" aria-label="Who’s reading?">
+      <button type="button" data-who="adult" aria-pressed="true"><span aria-hidden="true">📚</span> <span data-i18n="Grown-ups">Grown-ups</span><span class="who-lock" aria-hidden="true">🔒</span></button>
+      <button type="button" data-who="kids" aria-pressed="false"><span aria-hidden="true">🧸</span> <span data-i18n="Kinderhoekie">Kinderhoekie</span></button>
+    </div>
     <section class="nightstand" id="nightstand" hidden>
       <h1 class="greeting" id="greeting" data-i18n="Welcome back">Welcome back</h1>
       <p class="greeting-sub" data-i18n="Your book is right where you left it.">Your book is right where you left it.</p>
@@ -100,11 +104,13 @@
       <div class="dropzone" id="dropzone">
         <div class="hero-icon"><svg width="38" height="38"><use href="#i-nook"/></svg></div>
         <h1 data-i18n-html="welcome"></h1>
-        <p class="tagline" data-i18n="Read faster, from your favourite corner.">Read faster, from your favourite corner.</p>
-        <p data-i18n-html="emptyShelf"></p>
+        <p class="tagline adult-only" data-i18n="Read faster, from your favourite corner.">Read faster, from your favourite corner.</p>
+        <p class="adult-only" data-i18n-html="emptyShelf"></p>
+        <p class="kid-only" data-i18n="Your bookshelf is still empty.">Your bookshelf is still empty.</p>
         <label class="btn primary big" for="fileInput"><svg class="ic" width="20" height="20"><use href="#i-book"/></svg><span data-i18n="Put a book on the shelf">Put a book on the shelf</span></label>
         <p class="hint" data-i18n="or drop an EPUB here">or drop an EPUB here</p>
         <p class="kid-only kid-ask" data-i18n="Ask a grown-up to put a book on your shelf.">Ask a grown-up to put a book on your shelf.</p>
+        <button type="button" class="btn kid-only kids-add" id="kidsAddBook">🔒 <span data-i18n="Grown-ups: add a book">Grown-ups: add a book</span></button>
       </div>
     </section>
 
@@ -209,7 +215,7 @@
     </section>
 
     <section class="install-card adult-only" id="installCard" hidden aria-labelledby="installTitle">
-      <img class="install-icon" src="icons/icon-192.png?v=1.6.0" alt="" width="64" height="64" />
+      <img class="install-icon" src="icons/icon-192.png?v=1.8.0" alt="" width="64" height="64" />
       <div class="install-body">
         <h2 id="installTitle" data-i18n-html="installTitle"></h2>
         <p id="installText" data-i18n="Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.">Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.</p>
@@ -391,6 +397,7 @@
 
       <div class="bs-actions">
         <button type="button" class="btn primary big" id="bsOpen"><svg class="ic" width="20" height="20"><use href="#i-bookmark"/></svg><span id="bsOpenLabel" data-i18n="Open to my bookmark">Open to my bookmark</span></button>
+        <button type="button" class="btn link adult-only" id="bsToKids" data-i18n="Move to the kids’ shelf">Move to the kids’ shelf</button>
         <button type="button" class="btn link adult-only" id="bsRemove" data-i18n="Take off the shelf">Take off the shelf</button>
       </div>
     </form>
@@ -489,6 +496,25 @@
         <button type="button" class="btn secondary" id="artSave" data-i18n="Save to this device">Save to this device</button>
         <button type="button" class="btn link" id="artDelete" data-i18n="Take it out of my art">Take it out of my art</button>
       </div>
+    </form>
+  </dialog>
+
+  <dialog id="kidsSetup" class="sheet kids-setup" aria-labelledby="kidsSetupTitle">
+    <form method="dialog">
+      <div class="sheet-head">
+        <h2 id="kidsSetupTitle">🧸 <span data-i18n="Welcome to Kinderhoekie">Welcome to Kinderhoekie</span></h2>
+        <button class="btn round sm ghost" value="close" aria-label="Close"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg></button>
+      </div>
+      <p class="settings-note" data-i18n="A playful Boekhoek for children, with its own bookshelf. A grown-up PIN keeps your books and the settings locked away.">A playful Boekhoek for children, with its own bookshelf. A grown-up PIN keeps your books and the settings locked away.</p>
+      <div class="field">
+        <label class="field-label" for="setupChild"><span data-i18n="Child’s name">Child’s name</span></label>
+        <input type="text" class="text-input" id="setupChild" maxlength="20" autocomplete="off" placeholder="e.g. Mia" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="setupAdult"><span data-i18n="Who reads together with them?">Who reads together with them?</span></label>
+        <input type="text" class="text-input" id="setupAdult" maxlength="20" autocomplete="off" placeholder="e.g. Mamma" />
+      </div>
+      <button type="button" class="btn primary big" id="setupGo"><span data-i18n="Choose a PIN and start">Choose a PIN and start</span></button>
     </form>
   </dialog>
 
