@@ -4,6 +4,13 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.8.1 · 4 November 2026
+
+- **More books in Kinderhoekie:** the kids' bookshelf now ends with an *Add a book* tile marked
+  "🔒 For grown-ups". It asks for the grown-up PIN and then opens the file picker, so books can be
+  added after the first one (before, the tile was hidden in kids' mode).
+- Dropping an EPUB onto the page in Kinderhoekie also asks for the PIN first.
+
 ## 1.8.0 · 4 November 2026
 
 - **Switching between grown-ups and kids is on the home screen:** a *Grown-ups / Kinderhoekie* switch

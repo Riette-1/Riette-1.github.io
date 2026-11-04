@@ -293,13 +293,14 @@
       grid.append(item);
     });
 
-    const add = document.createElement('label');
+    // In Kinderhoekie the tile asks for the grown-up PIN before the file picker.
+    const add = document.createElement(Kids.on ? 'button' : 'label');
     add.className = 'shelf-book shelf-add';
-    add.htmlFor = 'fileInput';
+    if (Kids.on) { add.type = 'button'; add.addEventListener('click', addBookAsGrownUp); } else add.htmlFor = 'fileInput';
     add.setAttribute('role', 'listitem');
     add.innerHTML = '<span class="sb-cover"><svg width="28" height="28"><use href="#i-plus"/></svg></span><span class="sb-title"></span><span class="sb-meta"></span>';
     add.querySelector('.sb-title').textContent = t('Add a book');
-    add.querySelector('.sb-meta').textContent = t('EPUB from your device');
+    add.querySelector('.sb-meta').textContent = Kids.on ? t('🔒 For grown-ups') : t('EPUB from your device');
     grid.append(add);
   }
 
@@ -554,7 +555,12 @@
 
   ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.add('drag-over'); }));
   ['dragleave', 'drop'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.remove('drag-over'); }));
-  document.addEventListener('drop', (e) => loadBook(e.dataTransfer.files[0]));
+  document.addEventListener('drop', async (e) => {
+    const file = e.dataTransfer.files[0];
+    // Kinderhoekie: a grown-up says yes first.
+    if (Kids.on && file && !(await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to add a book.'), check: true }))) return;
+    loadBook(file);
+  });
 
   // ---------- Text helpers ----------
 
@@ -1755,9 +1761,10 @@
     kidsOn();
   });
   // In kids' mode, a grown-up can add a book with the PIN, without Settings.
-  $('kidsAddBook').addEventListener('click', async () => {
+  async function addBookAsGrownUp() {
     if (await askPin({ title: t('Grown-ups only'), help: t('Type the grown-up PIN to add a book.'), check: true })) $('fileInput').click();
-  });
+  }
+  $('kidsAddBook').addEventListener('click', addBookAsGrownUp);
   $('changePin').addEventListener('click', async () => {
     if (await chooseNewPin()) showStatus(t('The PIN is changed.'), false, 3000);
   });
