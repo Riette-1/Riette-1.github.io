@@ -4,6 +4,15 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.5.0 · 4 November 2026
+
+- **Landscape on phones:** turn the phone on its side and the reader becomes two columns (for screens
+  in landscape up to 540 px high). The text fills the left under the reading-mode tabs. A side panel on
+  the right holds the book title with the home and settings buttons, the chapter list, Page mode's
+  scroll / turn switch, the kids' turn card and the controls (progress, buttons, speed or voice). The
+  text gets about twice the height it had before. Flash uses a word size that fits the shorter screen.
+  Portrait and tablets are unchanged.
+
 ## 1.4.0 · 1 November 2026
 
 - **Turn pages in Page mode:** a new *Scroll / Turn pages* (*Rol / Blaai*) switch above the text. With
