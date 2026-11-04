@@ -2,17 +2,15 @@
 // bump it, add an entry to CHANGELOG.md, and set the same ?v= on the files
 // index.html loads (so phones fetch the matching code).
 const APP = {
-  version: '1.8.0',
+  version: '1.8.1',
   date: '2026-11-04',
   // What's new in this version, shown in Settings.
   notes: {
     en: [
-      'A “Grown-ups / Kinderhoekie” switch at the top of the reading nook. The first time, it asks for names and a PIN; going back to grown-ups needs the PIN.',
-      'In Kinderhoekie, a grown-up can add a book straight from the home screen with the PIN.',
+      'Kinderhoekie’s bookshelf now has an “Add a book” tile for grown-ups (with the PIN), so more books can be added after the first one.',
     ],
     af: [
-      '’n “Grootmense / Kinderhoekie”-skakelaar bo-aan die leeshoekie. Die eerste keer vra dit name en ’n PIN; terug na grootmense vra die PIN.',
-      'In Kinderhoekie kan ’n grootmens met die PIN ’n boek reg van die tuisskerm af byvoeg.',
+      'Kinderhoekie se boekrak het nou ’n “Voeg ’n boek by”-teël vir grootmense (met die PIN), sodat meer boeke ná die eerste een bygevoeg kan word.',
     ],
   },
 };

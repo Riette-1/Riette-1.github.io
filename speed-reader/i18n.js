@@ -106,6 +106,7 @@ const I18n = (() => {
     'Scroll': 'Rol',
     'Who’s reading?': 'Wie lees?',
     'Grown-ups': 'Grootmense',
+    '🔒 For grown-ups': '🔒 Vir grootmense',
     'Your bookshelf is still empty.': 'Jou boekrak is nog leeg.',
     'Kinderhoekie': 'Kinderhoekie',
     'Welcome to Kinderhoekie': 'Welkom by Kinderhoekie',

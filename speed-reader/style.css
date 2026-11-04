@@ -618,7 +618,7 @@ body:not(.kids) .kid-only, body.kids .adult-only { display: none !important; }
 body.kids .def-src { display: none; }
 body.kids .kid-ask { margin-top: 12px; font-weight: 700; color: var(--accent); }
 /* Grown-up only controls while a child is reading. */
-body.kids .speed, body.kids .shelf-add, body.kids #hero .btn:not(.kids-add), body.kids #hero .hint, body.kids .section-foot { display: none !important; }
+body.kids .speed, body.kids #hero .btn:not(.kids-add), body.kids #hero .hint, body.kids .section-foot { display: none !important; }
 body.kids .btn.round { width: 54px; height: 54px; }
 body.kids .btn.play { width: 76px; height: 76px; }
 body.kids .tab { font-size: 16px; padding: 11px 14px; }
