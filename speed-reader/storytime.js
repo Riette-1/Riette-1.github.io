@@ -38,7 +38,7 @@ const Storytime = (() => {
     if (v.default) s += 3;
     return s;
   }
-  const isNatural = (v) => quality(v) >= 25;
+  const isNatural = (v) => !!v.ai || quality(v) >= 25;
 
   const REGIONS = {
     US: 'American', GB: 'British', AU: 'Australian', IE: 'Irish', ZA: 'South African', IN: 'Indian',
@@ -56,6 +56,10 @@ const Storytime = (() => {
   }
 
   function describe(v) {
+    if (v.ai) {
+      const tr = (k) => (typeof I18n !== 'undefined' ? I18n.t(k) : k);
+      return `✨ ${v.name} · ${tr(v.accent)} · ${tr('AI')}`;
+    }
     const region = (v.lang.split(/[-_]/)[1] || '').toUpperCase();
     let name = shortName(v);
     // Android names voices after their language, e.g. "English (United States)".
@@ -70,6 +74,15 @@ const Storytime = (() => {
 
   const langOf = (lang) => (lang || navigator.language || 'en').slice(0, 2).toLowerCase();
 
+  // The AI voice speaks English only. A book without a language is treated
+  // as English, like elsewhere in Boekhoek.
+  const AI = typeof AIVoice !== 'undefined' && AIVoice.supported ? AIVoice : null;
+  const englishBook = (lang) => !lang || /^en/i.test(lang);
+  const aiVoices = (lang) => (AI && AI.ready() && englishBook(lang)
+    ? AI.VOICES.map((v) => ({ voiceURI: AI.uriOf(v), name: v.name, accent: v.accent, lang: 'en', ai: true }))
+    : []);
+  const usesAI = (uri, lang) => !!(AI && AI.isAI(uri) && AI.ready() && englishBook(lang));
+
   // The best few voices for a language, most natural first. Falls back to
   // English when the device has nothing for the book's language.
   function shortlist(lang) {
@@ -81,15 +94,17 @@ const Storytime = (() => {
     const local = (navigator.language || '').toLowerCase().replace('_', '-');
     const score = (v) => quality(v) + (v.lang.toLowerCase().replace('_', '-') === local ? 4 : 0);
     const seen = new Set();
-    return pool
+    const ai = aiVoices(lang);
+    return ai.concat(pool
       .sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))
       .filter((v) => { const k = describe(v); if (seen.has(k)) return false; seen.add(k); return true; })
-      .slice(0, SHORTLIST);
+      .slice(0, ai.length ? 3 : SHORTLIST));
   }
 
   // The saved voice if it's still installed and speaks the book's language,
   // otherwise the most natural one that does.
   function pickVoice(uri, lang) {
+    if (usesAI(uri, lang)) return aiVoices(lang).find((v) => v.voiceURI === uri) || aiVoices(lang)[0];
     const want = langOf(lang);
     const saved = voices.find((v) => v.voiceURI === uri);
     const hasLang = voices.some((v) => langOf(v.lang) === want);
@@ -103,14 +118,15 @@ const Storytime = (() => {
   function stop() {
     session++;
     if (supported) synth.cancel();
+    if (AI) AI.stop();
   }
 
   // End of the chunk starting at `start`: the end of the sentence, or for a
   // very long sentence the last comma or semicolon before the limit.
-  function chunkEnd(words, isBreak, start) {
+  function chunkEnd(words, isBreak, start, max = MAX_CHUNK_WORDS) {
     let end = start;
-    while (end < words.length - 1 && !isBreak(end) && end - start < MAX_CHUNK_WORDS) end++;
-    if (end - start >= MAX_CHUNK_WORDS && !isBreak(end)) {
+    while (end < words.length - 1 && !isBreak(end) && end - start < max) end++;
+    if (end - start >= max && !isBreak(end)) {
       for (let k = end; k > start + 8; k--) if (/[,;:]["'”’)]*$/.test(words[k])) return k;
     }
     return end;
@@ -121,6 +137,11 @@ const Storytime = (() => {
   // reports word boundaries); onDone(reachedEnd, error) when it stops by itself.
   function speak({ words, isBreak, from, voiceURI, lang, rate, onChunk, onWord, onDone, intro }) {
     stop();
+    // The AI voice: shorter pieces, so the first one is ready sooner.
+    if (usesAI(voiceURI, lang)) {
+      AI.speak({ words, isBreak, from, voiceURI, rate, onChunk, onWord, onDone, intro, chunkEnd: (w, b, s) => chunkEnd(w, b, s, 28) });
+      return;
+    }
     const id = ++session;
     const voice = pickVoice(voiceURI, lang);
     // An optional line to say first, e.g. greeting a child by name.
@@ -179,6 +200,7 @@ const Storytime = (() => {
 
   // Say a single word or short phrase, e.g. when a child taps a word.
   function say(text, { voiceURI, lang, rate = 0.9, onEnd } = {}) {
+    if (usesAI(voiceURI, lang)) { stop(); AI.say(speakable(text), { voiceURI, rate, onEnd }); return true; }
     if (!supported) { if (onEnd) onEnd(); return false; }
     stop();
     const id = session;
@@ -196,6 +218,7 @@ const Storytime = (() => {
 
   return {
     supported,
+    usesAI,
     say,
     voices: () => (voices.length ? voices : loadVoices()),
     onVoicesChanged: (fn) => { onVoices = fn; },

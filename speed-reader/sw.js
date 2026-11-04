@@ -4,8 +4,14 @@
 // refreshed in the background. Books and reading data already live on the
 // device, in IndexedDB and localStorage.
 const CACHE = 'nook-app-v1';
+// The AI voice's own files (its code, its voices and the speech engine) are
+// only fetched by readers who download it, and kept here until they remove it.
+// The model itself is cached by the voice library, in "transformers-cache".
+const VOICE_CACHE = 'nook-voice-v1';
+const VOICE_FILES = /\/vendor\/kokoro\/|^https:\/\/cdn\.jsdelivr\.net\/npm\/@huggingface\/transformers@/;
 const EXTRAS = [
   'manifest.webmanifest',
+  'aivoice-worker.js',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -46,14 +52,29 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
-    for (const key of await caches.keys()) if (key !== CACHE) await caches.delete(key);
+    // Only Boekhoek's own old caches: the AI voice's model and voices stay.
+    for (const key of await caches.keys()) if (key.startsWith('nook-app-') && key !== CACHE) await caches.delete(key);
     await self.clients.claim();
   })());
 });
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  if (req.method !== 'GET' || !req.url.startsWith(scope())) return;
+  if (req.method !== 'GET') return;
+
+  // The AI voice's files never change for a given version: cache first.
+  if (VOICE_FILES.test(req.url)) {
+    e.respondWith((async () => {
+      const cache = await caches.open(VOICE_CACHE);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) e.waitUntil(cache.put(req, res.clone()));
+      return res;
+    })());
+    return;
+  }
+  if (!req.url.startsWith(scope())) return;
 
   // The page: fresh when online, the saved copy when not.
   if (req.mode === 'navigate') {

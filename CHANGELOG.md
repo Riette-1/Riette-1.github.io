@@ -4,6 +4,23 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.6.0 · 4 November 2026
+
+- **Natural AI voice for English books:** Storytime can now use Kokoro, an open AI text-to-speech model
+  that runs entirely on the device (kokoro-js 1.2.1, vendored in `speed-reader/vendor/kokoro/`).
+  - Settings → Storytime has a "Natural AI voice (English)" card. One tap downloads it (about 92 MB
+    for the model from Hugging Face, plus the 22 MB speech engine from jsDelivr), with a progress bar.
+    It stays in the browser cache and works offline. Also has "Hear a sample" and "Remove from this
+    device".
+  - Five voices appear at the top of the Storytime voice list for English books: Heart, Bella and
+    Michael (American), Emma and George (British). Afrikaans books keep the phone's own voices.
+  - The voice runs in a background worker (`aivoice-worker.js`), a sentence or so at a time, with the
+    next sentence prepared while the current one plays. The highlight follows the speech, with a
+    slightly longer breath at the end of paragraphs.
+  - Tapping a word in kids' mode and hearing a looked-up word use the AI voice too.
+- The offline cache no longer clears other caches when Boekhoek updates, so the AI voice isn't
+  downloaded again with every new version.
+
 ## 1.5.0 · 4 November 2026
 
 - **Landscape on phones:** turn the phone on its side and the reader becomes two columns (for screens

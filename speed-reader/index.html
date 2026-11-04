@@ -14,24 +14,25 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="icon" href="icons/favicon.svg?v=1.5.0" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-32.png?v=1.5.0" sizes="32x32" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.5.0" />
+  <link rel="icon" href="icons/favicon.svg?v=1.6.0" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-32.png?v=1.6.0" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1.6.0" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=1.5.0" />
-  <script src="version.js?v=1.5.0" defer></script>
-  <script src="i18n.js?v=1.5.0" defer></script>
-  <script src="epub.js?v=1.5.0" defer></script>
-  <script src="library.js?v=1.5.0" defer></script>
-  <script src="journal.js?v=1.5.0" defer></script>
-  <script src="dictionary.js?v=1.5.0" defer></script>
-  <script src="storytime.js?v=1.5.0" defer></script>
-  <script src="backup.js?v=1.5.0" defer></script>
-  <script src="quiz.js?v=1.5.0" defer></script>
-  <script src="buddies.js?v=1.5.0" defer></script>
-  <script src="kids.js?v=1.5.0" defer></script>
-  <script src="art.js?v=1.5.0" defer></script>
-  <script src="app.js?v=1.5.0" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.6.0" />
+  <script src="version.js?v=1.6.0" defer></script>
+  <script src="i18n.js?v=1.6.0" defer></script>
+  <script src="epub.js?v=1.6.0" defer></script>
+  <script src="library.js?v=1.6.0" defer></script>
+  <script src="journal.js?v=1.6.0" defer></script>
+  <script src="dictionary.js?v=1.6.0" defer></script>
+  <script src="aivoice.js?v=1.6.0" defer></script>
+  <script src="storytime.js?v=1.6.0" defer></script>
+  <script src="backup.js?v=1.6.0" defer></script>
+  <script src="quiz.js?v=1.6.0" defer></script>
+  <script src="buddies.js?v=1.6.0" defer></script>
+  <script src="kids.js?v=1.6.0" defer></script>
+  <script src="art.js?v=1.6.0" defer></script>
+  <script src="app.js?v=1.6.0" defer></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -208,7 +209,7 @@
     </section>
 
     <section class="install-card adult-only" id="installCard" hidden aria-labelledby="installTitle">
-      <img class="install-icon" src="icons/icon-192.png?v=1.5.0" alt="" width="64" height="64" />
+      <img class="install-icon" src="icons/icon-192.png?v=1.6.0" alt="" width="64" height="64" />
       <div class="install-body">
         <h2 id="installTitle" data-i18n-html="installTitle"></h2>
         <p id="installText" data-i18n="Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.">Install Boekhoek on this device. It opens full-screen from your home screen and works without internet.</p>
@@ -604,6 +605,17 @@
       <section>
         <h3 data-i18n="Storytime">Storytime</h3>
         <p class="settings-note" data-i18n-html="voicesNote"></p>
+        <div class="ai-voice" id="aiVoice" hidden>
+          <div class="ai-voice-head"><strong data-i18n="Natural AI voice (English)">Natural AI voice (English)</strong><span class="ai-badge" id="aiBadge"></span></div>
+          <p class="settings-note" data-i18n="A very human-sounding voice that runs on this device. It’s a one-time download of about 115 MB (best on Wi-Fi), and works offline after that. For English books only; Afrikaans books keep the phone’s voice.">A very human-sounding voice that runs on this device. It’s a one-time download of about 115 MB (best on Wi-Fi), and works offline after that. For English books only; Afrikaans books keep the phone’s voice.</p>
+          <div class="ai-progress" id="aiProgress" hidden><span id="aiBar"></span></div>
+          <p class="settings-note ai-status" id="aiStatus" hidden></p>
+          <div class="ai-actions">
+            <button type="button" class="btn primary" id="aiDownload" data-i18n="Download the AI voice">Download the AI voice</button>
+            <button type="button" class="btn" id="aiTry" hidden data-i18n="Hear a sample">Hear a sample</button>
+            <button type="button" class="btn link" id="aiRemove" hidden data-i18n="Remove from this device">Remove from this device</button>
+          </div>
+        </div>
         <p class="settings-note warn" id="voiceTip" hidden data-i18n="This device only has basic voices at the moment, which can sound robotic.">This device only has basic voices at the moment, which can sound robotic.</p>
         <p class="settings-note" id="voiceHelp"></p>
       </section>
