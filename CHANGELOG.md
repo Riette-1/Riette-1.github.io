@@ -4,6 +4,17 @@ Boekhoek shows its version in **Settings → About Boekhoek** and in the footer.
 With every release: bump `speed-reader/version.js`, set the same `?v=` on the files
 `speed-reader/index.html` loads, and add an entry here.
 
+## 1.7.0 · 4 November 2026
+
+- **Separate shelves for kids and grown-ups:** every book now belongs to the shelf it was added on.
+  Books added in kids' mode only appear (and open) in kids' mode, and books added in grown-up mode only
+  in grown-up mode. The same book can be on both shelves, each with its own bookmark.
+- Switching kids' mode on or off while a book is open puts that book away, so it can't be read from the
+  other mode.
+- A grown-up book's card has **Move to the kids' shelf**. If the kids already have their own copy,
+  they keep their bookmark.
+- Books added before this version are on the grown-ups' shelf.
+
 ## 1.6.0 · 4 November 2026
 
 - **Natural AI voice for English books:** Storytime can now use Kokoro, an open AI text-to-speech model

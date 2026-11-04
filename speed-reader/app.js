@@ -34,6 +34,11 @@
   const allowedModes = () => (Kids.on ? ['page', 'story', 'together'] : ['pacer', 'rsvp', 'page', 'story']);
 
   let book = null;
+  // Kids' mode and grown-up mode each have their own bookshelf. A book added
+  // in one is only ever seen and opened in that one.
+  const currentShelf = () => (Kids.on ? 'kids' : 'adult');
+  const keyFor = (b, shelf) => `sr:pos:${shelf === 'kids' ? 'kids|' : ''}${b.title}|${b.author}|${b.words.length}`;
+  let bookShelf = 'adult';
   let bookKey = '';
   let pos = 0;
   let playing = false;
@@ -90,7 +95,8 @@
     if (book && book.pictures) for (const list of book.pictures.values()) for (const pic of list) URL.revokeObjectURL(pic.url);
     book = loaded;
     greeted = false;
-    bookKey = `sr:pos:${book.title}|${book.author}|${book.words.length}`;
+    bookShelf = currentShelf();
+    bookKey = shelfKey || keyFor(book, bookShelf);
     pos = Math.min(store.get(bookKey, 0), book.words.length - 1);
     pacerChapter = -1;
     lastChapter = -1;
@@ -105,7 +111,7 @@
 
     Library.touch(bookKey);
     if (!shelfKey) {
-      Library.add({ key: bookKey, file, cover: book.cover, title: book.title, author: book.author, addedAt: Date.now() })
+      Library.add({ key: bookKey, file, cover: book.cover, title: book.title, author: book.author, addedAt: Date.now(), shelf: bookShelf })
         .catch((err) => {
           console.warn('Could not put the book on the shelf', err);
           showStatus(t('There’s no room left on this device to keep this book on the shelf, but you can still read it now.'), true, 8000);
@@ -202,7 +208,7 @@
     // The buddy, stickers and word jar don't depend on the shelf: draw them now.
     renderKidsHome();
     renderJar();
-    shelfBooks = await Library.books();
+    shelfBooks = await Library.books(currentShelf());
     coverUrls.forEach((u) => URL.revokeObjectURL(u));
     coverUrls = [];
     const has = shelfBooks.length > 0;
@@ -474,6 +480,25 @@
       if (book && bookKey === b.key) pos = 0;
     }
     openFromShelf(b.key);
+  });
+
+  // Grown-ups can hand a book over to the kids' shelf.
+  $('bsToKids').addEventListener('click', async () => {
+    const b = sheetBook;
+    if (!b || !confirm(t('Move “{title}” to the kids’ shelf? It will only show in kids’ mode.', { title: b.title }))) return;
+    bookSheet.close();
+    const newKey = b.key.replace(/^sr:pos:/, 'sr:pos:kids|');
+    // If the kids already have their own copy, they keep their bookmark.
+    if (store.get(newKey, null) == null) store.set(newKey, store.get(b.key, 0));
+    if (book && bookKey === b.key) {
+      savePos(true);
+      if (!$('reader').hidden) goHome();
+      book = null;
+      bookKey = '';
+    }
+    await Library.move(b.key, newKey, 'kids');
+    showStatus(t('“{title}” is on the kids’ shelf now.', { title: b.title }), false, 4000);
+    renderHome();
   });
 
   $('bsRemove').addEventListener('click', async () => {
@@ -1653,6 +1678,19 @@
 
   // ---- Switching kids' mode on and off.
   function applyKids() {
+    // The open book belongs to the other shelf: put it away first.
+    if (book && bookShelf !== currentShelf()) {
+      pause();
+      savePos(true);
+      closeDefinition();
+      $('reader').hidden = true;
+      $('welcome').hidden = false;
+      document.body.classList.remove('reading');
+      releaseAwake();
+      if (book.pictures) for (const list of book.pictures.values()) for (const pic of list) URL.revokeObjectURL(pic.url);
+      book = null;
+      bookKey = '';
+    }
     document.body.classList.toggle('kids', Kids.on);
     applyAppearance();
     $('kidsToggle').textContent = t(Kids.on ? 'Turn kids’ mode off' : 'Turn kids’ mode on');
