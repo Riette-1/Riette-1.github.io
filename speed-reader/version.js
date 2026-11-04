@@ -2,17 +2,15 @@
 // bump it, add an entry to CHANGELOG.md, and set the same ?v= on the files
 // index.html loads (so phones fetch the matching code).
 const APP = {
-  version: '1.4.0',
-  date: '2026-11-01',
+  version: '1.5.0',
+  date: '2026-11-04',
   // What's new in this version, shown in Settings.
   notes: {
     en: [
-      'Page mode can now turn pages like a book: tap “Turn pages” at the top, then swipe left or right (or use the arrows). The page number shows at the bottom.',
-      'Pinch the text with two fingers to make it bigger or smaller, in any reading mode.',
+      'Turn your phone on its side to read in landscape: the text fills the left, and the buttons, speed and chapter sit in a panel on the right.',
     ],
     af: [
-      'Bladsy kan nou blaai soos ’n boek: tik bo op “Blaai”, en swiep dan links of regs (of gebruik die pyltjies). Die bladsynommer staan onderaan.',
-      'Knyp die teks met twee vingers om dit groter of kleiner te maak, in enige leesmodus.',
+      'Draai jou foon op sy sy om dwars te lees: die teks vul die linkerkant, en die knoppies, spoed en hoofstuk staan in ’n paneel aan die regterkant.',
     ],
   },
 };

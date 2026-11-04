@@ -1389,6 +1389,75 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
   @keyframes sheet-in { from { transform: translateY(100%); } }
 }
 
+/* ---------- Phone on its side (landscape) ----------
+   The screen is wide but short, so the reader becomes two columns: the text
+   takes the left, and everything else stacks in a side panel on the right
+   (book title, chapter, buttons and speed). */
+@media (orientation: landscape) and (max-height: 540px) {
+  body.reading { --side: clamp(250px, 32vw, 320px); }
+
+  /* The top bar shrinks into the top of the side panel. */
+  body.reading .topbar {
+    position: fixed; top: 0; right: 0; z-index: 4;
+    width: var(--side); max-width: none; margin: 0;
+    padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 0 4px;
+    gap: 2px;
+  }
+  body.reading .brand, body.reading .awake, body.reading .book-sub { display: none; }
+  body.reading .topbar .lbl { display: none; }
+  body.reading .topbar .btn { padding: 8px; }
+
+  body.reading .reader {
+    max-width: none; margin: 0;
+    padding: max(8px, env(safe-area-inset-top)) 0 0 max(12px, env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--side);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    column-gap: 12px; row-gap: 0;
+  }
+  /* Left: the reading modes on top, the text below. */
+  body.reading .mode-bar { display: contents; }
+  body.reading .mode-bar .segmented[role="tablist"] { grid-column: 1; grid-row: 1; width: auto; justify-self: start; margin-bottom: 8px; }
+  body.reading .stage { grid-column: 1; grid-row: 2 / -1; margin-bottom: max(8px, env(safe-area-inset-bottom)); }
+  body.reading .stage[hidden] { display: none; }
+  /* Right: chapter, scroll or turn, kids' banners, then the controls at the bottom. */
+  body.reading #chapterSelect { grid-column: 2; grid-row: 2; width: auto; max-width: none; margin: 0 max(10px, env(safe-area-inset-right)) 8px 0; }
+  body.reading .page-style { grid-column: 2; grid-row: 3; justify-self: start; margin-bottom: 8px; }
+  body.reading .listen-banner { grid-column: 2; grid-row: 4; margin: 0 max(10px, env(safe-area-inset-right)) 8px 0; font-size: 14px; }
+  body.reading .turn-card { grid-column: 2; grid-row: 5; margin: 0 max(10px, env(safe-area-inset-right)) 8px 0; flex-wrap: wrap; padding: 10px; gap: 8px; }
+  body.reading .turn-card .btn.big { width: 100%; }
+  body.reading .dock { grid-column: 2; grid-row: 6; align-self: end; padding-right: max(10px, env(safe-area-inset-right)); }
+
+  body.reading .control-row { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
+  body.reading .transport { order: 1; gap: 6px; }
+  body.reading .speed, body.reading .story-controls { order: 2; width: 100%; }
+  body.reading .speed .range { flex: 1; width: auto; }
+  body.reading .story-controls select { max-width: none; }
+  body.reading .dock-end { display: none; }
+  body.reading .btn.round, body.kids.reading .btn.round { width: 42px; height: 42px; }
+  body.reading .btn.round.sm { width: 34px; height: 34px; }
+  body.reading .btn.play, body.kids.reading .btn.play { width: 56px; height: 56px; }
+  body.reading .progress-labels { flex-direction: column; gap: 0; font-size: 12px; }
+  body.reading .progress-labels > span:last-child { text-align: left; }
+
+  /* Fading while playing: the bar no longer has a box of its own. */
+  body.playing .mode-bar > * { opacity: 0.18; transition: opacity .35s; }
+
+  /* Flash: a word that fits the shorter screen. */
+  body.reading .word { font-size: calc(clamp(1.8rem, 12vh, 3.2rem) * var(--scale)); }
+  body.reading .rsvp { padding: 12px; }
+  body.reading .context { margin-top: 12px; min-height: 3.4em; }
+  body.reading .pacer-inner { padding-top: 18px; }
+
+  /* Keep the reading-mode tabs on one line. */
+  body.reading .mode-bar .tab { white-space: nowrap; padding: 8px 12px; }
+  /* Kids: a smaller turn card, and no time labels, so it all fits beside the story. */
+  body.reading .turn-face, body.reading #turnHint, body.reading .scene-strip { display: none; }
+  body.reading .turn-card .turn-text { flex: 1 1 100%; text-align: center; }
+  body.reading .turn-card .btn.big { padding: 10px 16px; font-size: 17px; }
+  body.kids.reading .progress-labels { display: none; }
+}
+
 @media (max-height: 560px) {
   .tap-hint { display: none; }
   .context { margin-top: 16px; }
