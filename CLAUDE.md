@@ -1,5 +1,10 @@
 # Notes for working on this site
 
+## Publishing
+
+Riëtte's standing instruction: **always push finished changes straight to `main`** (no pull
+requests). Run the checks first, then push to `main` so the change goes live on GitHub Pages.
+
 ## Bakboord na stuurboord (`/bakboord/`)
 
 Product decisions from Riëtte, to follow in every change:
