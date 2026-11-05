@@ -18,3 +18,14 @@ Current version: **1.8.2** (see [CHANGELOG.md](CHANGELOG.md)). The version is sh
 - **Works offline and installs like an app**: a service worker keeps the app's files on the device, and the web app manifest lets it be installed (Chrome/Edge/Android) or added to the iPhone Home Screen.
 
 Shortcuts: `Space` play/pause, `←`/`→` sentence, `↑`/`↓` speed, `[`/`]` chapter, `M` switch mode.
+
+## Bakboord na stuurboord
+
+[Bakboord na stuurboord](https://riette-1.github.io/bakboord/) (version 0.1.0) turns treadmill steps into a journey on Google Maps. It's made for mobile phones and for treadmill walking or running only (no GPS or outdoor tracking). It lives in [`/bakboord/`](bakboord/).
+
+- **Pick any route:** search for a start and destination, or tap them on the map. The app draws the road route and shows its distance, the steps needed (10 map km per km walked, by default) and roughly how many sessions it will take.
+- **Workout timer:** start, pause and resume during a workout; paused time doesn't count, and a paused timer survives closing the browser. Finish, then type the steps (or km) from your Garmin.
+- **Journeys:** keep several at once. Pause one and resume it any time later from exactly the same spot; only one is active at a time.
+- **Postcards** every 50 map km and on arrival, a session history (delete a wrong entry and the marker moves back), and a backup file to move journeys to another device.
+
+Needs a Google Maps API key in `bakboord/config.js` (or pasted into the app on each device), with the Maps JavaScript API, Places API (New) and Routes API enabled. Restrict the key to `https://riette-1.github.io/*`. Everything else stays in the browser.
