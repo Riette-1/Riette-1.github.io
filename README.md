@@ -21,7 +21,7 @@ Shortcuts: `Space` play/pause, `←`/`→` sentence, `↑`/`↓` speed, `[`/`]` 
 
 ## Bakboord na stuurboord
 
-[Bakboord na stuurboord](https://riette-1.github.io/bakboord/) (version 0.1.0) turns treadmill steps into a journey on Google Maps. It's made for mobile phones and for treadmill walking or running only (no GPS or outdoor tracking). It lives in [`/bakboord/`](bakboord/).
+[Bakboord na stuurboord](https://riette-1.github.io/bakboord/) (version 0.2.0) turns treadmill steps into a journey on Google Maps. It's made for mobile phones and for treadmill walking or running only (no GPS or outdoor tracking). It lives in [`/bakboord/`](bakboord/).
 
 - **Pick any route:** search for a start and destination, or tap them on the map. The app draws the road route and shows its distance, the steps needed (10 map km per km walked, by default) and roughly how many sessions it will take.
 - **Workout timer:** start, pause and resume during a workout; paused time doesn't count, and a paused timer survives closing the browser. Finish, then type the steps (or km) from your Garmin.
