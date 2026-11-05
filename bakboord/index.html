@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="author" content="Riëtte" />
+  <title>Bakboord na stuurboord</title>
+  <meta name="description" content="Pick any start and destination on the map, and every treadmill step moves you along the real road route." />
+  <meta name="theme-color" content="#c98a2b" />
+  <link rel="icon" href="icon.svg?v=0.1.0" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css?v=0.1.0" />
+  <script src="config.js?v=0.1.0" defer></script>
+  <script src="geo.js?v=0.1.0" defer></script>
+  <script src="store.js?v=0.1.0" defer></script>
+  <script src="app.js?v=0.1.0" defer></script>
+</head>
+<body>
+  <div id="map" aria-label="Map"></div>
+  <div id="map-hint" class="map-hint" hidden></div>
+  <main id="panel" class="panel" aria-live="polite"></main>
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" id="modal-card"></div>
+  </div>
+  <div id="toast" class="toast" hidden></div>
+</body>
+</html>
